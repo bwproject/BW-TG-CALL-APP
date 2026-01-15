@@ -1,27 +1,28 @@
-⸻
+# BW CallMe — Аудио и видеозвонки внутри Telegram WebApp
 
-BW CallMe — Аудио и видеозвонки внутри Telegram WebApp
+BW CallMe — это модуль для Telegram, позволяющий совершать **аудио- и видеозвонки** прямо через WebApp. Использует **WebRTC** и **WebSocket** для передачи видео и аудио между пользователями.
 
-BW CallMe — это модуль для Telegram, позволяющий совершать аудио- и видеозвонки прямо через WebApp. Использует WebRTC и WebSocket для передачи видео и аудио между пользователями.
+---
 
-⸻
-
-📦 Структура проекта
+## 📦 Структура проекта
 
 webapp/
- └─ callme/
-     ├─ index.html       # Страница звонка WebApp
-     ├─ app.js           # Логика звонка (WebRTC + WS)
-     ├─ style.css        # Стили интерфейса
-     ├─ callme.json      # Хранилище данных пользователей
-     └─ avatar/          # Сохранённые аватары пользователей (tgid.jpg)
+└─ callme/
+├─ index.html       # Страница звонка WebApp
+├─ app.js           # Логика звонка (WebRTC + WS)
+├─ style.css        # Стили интерфейса
+├─ callme.json      # Хранилище данных пользователей
+└─ avatar/          # Сохранённые аватары пользователей (tgid.jpg)
 callme.py                # Telegram bot module
 .env                     # Настройки TURN/STUN сервера
 
-	•	callme.json — хранит информацию о пользователях: id, name, username, avatar.
-	•	avatar/ — сохраняются аватары пользователей по TGID (tgid.jpg).
-	•	.env — переменные для TURN/STUN:
+### Файлы и директории
 
+- `callme.json` — хранит информацию о пользователях: `id`, `name`, `username`, `avatar`.  
+- `avatar/` — сохраняются аватары пользователей по TGID (`tgid.jpg`).  
+- `.env` — переменные для TURN/STUN:
+
+```env
 TURNIP=127.0.0.1
 TURNLOGIN=login
 TURNPASSWORD=password
@@ -30,17 +31,19 @@ TURNPASSWORD=password
 ⸻
 
 ⚙️ Установка
-	1.	Клонируйте репозиторий:
+
+1. Клонируйте репозиторий
 
 git clone https://github.com/bwproject/BW-TG-CALL-APP.git
 cd BW-TG-CALL-APP
 
-	2.	Установите зависимости Python:
+2. Установите зависимости Python
 
 pip install aiogram fastapi uvicorn aiohttp
 
-	3.	Создайте .env с вашими TURN/STUN настройками.
-	4.	Запустите бота:
+3. Создайте .env с вашими TURN/STUN настройками
+
+4. Запустите бота
 
 uvicorn callme:app --reload
 
@@ -50,7 +53,8 @@ uvicorn callme:app --reload
 📝 Настройка Telegram Bot
 	•	Создайте бота через BotFather￼.
 	•	Вставьте токен в .env (или в конфигурацию бота).
-	•	Бот использует команды:
+
+Команды бота
 
 Команда	Описание
 /callme	Начало звонка. Если указан TGID, отправляет запрос на звонок другому пользователю.
@@ -81,12 +85,13 @@ uvicorn callme:app --reload
 	•	Громкая связь
 	•	Завершение звонка
 
-⚠️ Примечание: Камера и микрофон запрашиваются только по кнопке. Автостарт невозможен.
+⚠️ Камера и микрофон запрашиваются только по кнопке. Автостарт невозможен.
 
 ⸻
 
 📂 Работа с callme.json
-	•	Пример структуры:
+
+Пример структуры
 
 {
   "123456": {
@@ -105,6 +110,7 @@ uvicorn callme:app --reload
   }
 }
 
+Особенности
 	•	Автоматически создается при первом вызове /callme.
 	•	Автоматически сохраняются аватары пользователей в avatar/<TGID>.jpg.
 
@@ -141,4 +147,4 @@ TURNPASSWORD=password
 
 Project BW — разработка и поддержка модуля BW CallMe.
 
-⸻
+
