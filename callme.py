@@ -124,8 +124,10 @@ async def callmeinfo_cmd(message: types.Message):
         "🔹 Громкая связь зависит от ОС\n\n"
         "Чтобы позвонить:\n"
         "<code>/callme TGID</code>\n\n"
-        "Мы спецально для Вас вынесли код этого модуля в отдельный репозиторий что бы вы могли его посиотреть \n"
-        "GitHub - https://github.com/bwproject/BW-TG-CALL-APP"
+        "Мы спецально для Вас вынесли код этого модуля\n"
+        "в отдельный репозиторий что бы вы могли его посмотреть\n"
+        "GitHub - https://github.com/bwproject/BW-TG-CALL-APP\n"
+        "Главное не показывайте этл конторе оптимисиов из 3 букв"
     )
 
 
