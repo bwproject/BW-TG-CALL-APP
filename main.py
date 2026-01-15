@@ -5,6 +5,9 @@ import asyncio
 import logging
 from dotenv import load_dotenv
 
+# ─── Загрузка .env (ОБЯЗАТЕЛЬНО ДО ИМПОРТОВ callme) ─────────────
+load_dotenv()
+
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -15,11 +18,10 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-# 🆕 CALLME
+# 🆕 CALLME (теперь env уже загружен)
 from callme import callme_router, callme_api_router
 
-# ─── Загрузка .env ─────────────────────────
-load_dotenv()
+# ─── ENV ─────────────────────────────────
 API_TOKEN = os.getenv("TOKEN")
 WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
 WEBAPP_HOST = os.getenv("WEBAPP_HOST", "https://webapp.projectbw.ru")
@@ -42,7 +44,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ─── Создание бота ─────────────────────────
+# ─── Создание бота ───────────────────────
 async def create_bot():
     session = AiohttpSession()
     bot = Bot(
@@ -53,17 +55,26 @@ async def create_bot():
     logger.info("🤖 Бот создан")
     return bot
 
-# ─── Инициализация Dispatcher ─────────────
+# ─── Dispatcher ──────────────────────────
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
-# ─── Подключаем CallMe роутер ─────────────
+# ─── CallMe router ───────────────────────
 dp.include_router(callme_router)
 
-# ─── FastAPI ──────────────────────────────
+# ─── FastAPI ─────────────────────────────
 app = FastAPI()
-app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), name="callme_webapp")
-app.include_router(callme_api_router, prefix="/api/callme")
+
+app.mount(
+    "/webapp/callme",
+    StaticFiles(directory="webapp/callme", html=True),
+    name="callme_webapp"
+)
+
+app.include_router(
+    callme_api_router,
+    prefix="/api/callme"
+)
 
 # ─── Запуск бота ─────────────────────────
 async def run_bot():
@@ -79,13 +90,18 @@ async def run_bot():
     logger.info("🤖 Бот запущен")
     await dp.start_polling(bot)
 
-# ─── FastAPI сервер ───────────────────────
+# ─── FastAPI сервер ──────────────────────
 async def start_api_server():
-    config = uvicorn.Config(app, host="0.0.0.0", port=API_PORT, log_level="info")
+    config = uvicorn.Config(
+        app,
+        host="0.0.0.0",
+        port=API_PORT,
+        log_level="info"
+    )
     server = uvicorn.Server(config)
     await server.serve()
 
-# ─── Главная функция ──────────────────────
+# ─── Main ────────────────────────────────
 async def main():
     api_task = asyncio.create_task(start_api_server())
     try:
