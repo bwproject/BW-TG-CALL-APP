@@ -116,14 +116,16 @@ async def save_callme_user(message: types.Message):
 @callme_router.message(Command("callmeinfo"))
 async def callmeinfo_cmd(message: types.Message):
     await message.answer(
-        "📞 <b>CallMe</b>\n\n"
+        "📞 <b>BW CallMe</b>\n\n"
         "Это встроенные аудио/видеозвонки через Telegram WebApp.\n\n"
         "🔹 Видео и аудио через WebRTC\n"
         "🔹 Работает на iOS и Android\n"
         "🔹 Камера и микрофон — только по кнопке\n"
         "🔹 Громкая связь зависит от ОС\n\n"
         "Чтобы позвонить:\n"
-        "<code>/callme TGID</code>"
+        "<code>/callme TGID</code>\n\n"
+        "Мы спецально для Вас вынесли код этого модуля в отдельный репозиторий что бы вы могли его посиотреть \n"
+        "GitHub - https://github.com/bwproject/BW-TG-CALL-APP"
     )
 
 
