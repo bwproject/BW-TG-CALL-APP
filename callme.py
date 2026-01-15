@@ -174,7 +174,6 @@ async def callme_cmd(message: types.Message):
         await message.answer("❌ Нельзя позвонить самому себе")
         return
 
-    # Пробуем отправить сообщение
     try:
         pending_calls[target_id] = message.from_user.id
 
@@ -193,6 +192,18 @@ async def callme_cmd(message: types.Message):
             f"<code>{target_id}</code>\n\n"
             "Он ещё ни разу не запускал бота."
         )
+        return
+
+    except TelegramBadRequest as e:
+        pending_calls.pop(target_id, None)
+        if "chat not found" in str(e):
+            await message.answer(
+                f"❌ Невозможно отправить сообщение пользователю "
+                f"<code>{target_id}</code>\n\n"
+                "Он ещё ни разу не запускал бота."
+            )
+        else:
+            await message.answer(f"❌ Ошибка Telegram API:\n<code>{e}</code>")
         return
 
     await message.answer("📨 Запрос на звонок отправлен")
