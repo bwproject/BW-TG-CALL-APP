@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calme Call</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="./style.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<div class="call-container">
+
+    <header id="callHeader">📞Звонок</header>
+
+    <!-- VIDEO -->
+    <div class="video-container">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <video id="localVideo" autoplay muted playsinline></video>
+
+        <div id="remoteAvatar" class="avatar-circle">👤</div>
+        <div id="avatar" class="avatar-circle">👤</div>
+    </div>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <button id="attentionBtn" class="btn btn-warning btn-sm">ВНИМАНИЕ ⚠️</button>
+        <div id="statusText" class="status-text">WS: ❌</div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls" id="controls">
+        <button id="switchCameraBtn"><i class="fa-solid fa-camera-rotate"></i></button>
+        <button id="toggleVideoBtn"><i class="fa-solid fa-video"></i></button>
+        <button id="muteMicBtn"><i class="fa-solid fa-microphone"></i></button>
+        <button id="speakerBtn"><i class="fa-solid fa-volume-high"></i></button>
+        <button id="endBtn"><i class="fa-solid fa-phone-slash"></i></button>
+    </div>
+
+    <!-- SPEAKER MENU -->
+    <div id="speakerMenu" class="speaker-menu"></div>
+
+    <!-- PRECALL -->
+    <div id="preCallOverlay" class="pre-call-overlay">
+        <div class="overlay-content text-center">
+            <h5>⚠️ ВНИМАНИЕ</h5>
+            <p id="attentionText"></p>
+            <button id="startBtn" class="btn btn-success btn-lg mt-3">
+                Начать звонок 📞
+            </button>
+        </div>
+    </div>
+
+    <!-- ATTENTION MODAL -->
+    <div id="attentionModal" class="attention-modal">
+        <div class="attention-content">
+            <h5>ВНИМАНИЕ ⚠️</h5>
+            <p id="attentionTextModal"></p>
+            <button id="closeAttentionBtn" class="btn btn-primary btn-sm mt-2">Закрыть</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const attentionText = `
+<b>Ограничения Telegram WebApp (iOS / Android):</b><br>
+• Автостарт звонка невозможен<br>
+• Камера и микрофон — только по кнопке<br>
+• Переключение динамика ограничено ОС<br>
+• Сворачивание может остановить звук и видео
+`;
+document.getElementById("attentionText").innerHTML = attentionText;
+document.getElementById("attentionTextModal").innerHTML = attentionText;
+</script>
+
+<script src="./app.js"></script>
+</body>
+</html>
