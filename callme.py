@@ -135,7 +135,7 @@ async def save_callme_user(message: types.Message):
 async def callmeinfo_cmd(message: types.Message):
     await message.answer(
         "📞 <b>BW CallMe</b>\n\n"
-        "Встроенные аудио- и видеозвонки прямо внутри Telegram "
+        "Встроенные аудио и видеозвонки прямо внутри Telegram "
         "через WebApp.\n\n"
         "🔹 WebRTC (видео и аудио)\n"
         "🔹 Поддержка iOS и Android\n"
@@ -144,7 +144,8 @@ async def callmeinfo_cmd(message: types.Message):
         "▶️ <b>Как позвонить</b>\n"
         "<code>/callme TGID</code>\n\n"
         "💡 Код модуля вынесен в отдельный репозиторий:\n"
-        "https://github.com/bwproject/BW-TG-CALL-APP\n\n"
+        "https://github.com/bwproject/BW-TG-CALL-APP\n"
+        "⭐️ Отделтный бот только с Mini App @BWCallMeBot\n\n"
         "🤫 И да… не показывайте это одной конторе из трёх букв 😉"
     )
 
