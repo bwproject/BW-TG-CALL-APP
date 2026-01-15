@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 # ─── Paths ──────────────────────────────
 CALLME_JSON = "webapp/callme/callme.json"
 AVATAR_DIR = "webapp/callme/avatar"
-
 os.makedirs(AVATAR_DIR, exist_ok=True)
 
 # ─── Routers ─────────────────────────────
@@ -39,7 +38,6 @@ def generate_call_id(tg1: int, tg2: int) -> str:
     raw = f"{tg1}:{tg2}:{time.time()}"
     return hashlib.sha256(raw.encode()).hexdigest()[:24]
 
-
 def make_webapp_kb(call_url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[
@@ -50,7 +48,6 @@ def make_webapp_kb(call_url: str) -> InlineKeyboardMarkup:
         ]]
     )
 
-
 def incoming_call_kb(from_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[
@@ -59,7 +56,6 @@ def incoming_call_kb(from_id: int) -> InlineKeyboardMarkup:
         ]]
     )
 
-
 # ─── callme.json helpers ─────────────────
 def load_callme_users() -> dict:
     if not os.path.exists(CALLME_JSON):
@@ -67,11 +63,9 @@ def load_callme_users() -> dict:
     with open(CALLME_JSON, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def save_callme_users(data: dict):
     with open(CALLME_JSON, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-
 
 # ─── Avatar ─────────────────────────────
 async def download_avatar(bot, user_id: int) -> Optional[str]:
@@ -91,16 +85,12 @@ async def download_avatar(bot, user_id: int) -> Optional[str]:
                 with open(avatar_path, "wb") as f:
                     f.write(await resp.read())
 
-    # путь, доступный WebApp
     return f"/callme/avatar/{user_id}.jpg"
-
 
 async def save_callme_user(message: types.Message):
     users = load_callme_users()
     user = message.from_user
-
     avatar = await download_avatar(message.bot, user.id)
-
     users[str(user.id)] = {
         "id": user.id,
         "name": user.first_name,
@@ -108,7 +98,6 @@ async def save_callme_user(message: types.Message):
         "avatar": avatar,
         "updated_at": int(time.time())
     }
-
     save_callme_users(users)
 
 # ─── /callmeinfo ─────────────────────────
@@ -132,7 +121,6 @@ async def callmeinfo_cmd(message: types.Message):
         "конторе из трёх букв 😉"
     )
 
-
 # ─── /callme ─────────────────────────────
 @callme_router.message(Command("callme"))
 async def callme_cmd(message: types.Message):
@@ -145,10 +133,8 @@ async def callme_cmd(message: types.Message):
             f"Привет, {message.from_user.first_name} 👋\n\n"
             f"📞 <b>CallMe — аудио/видеозвонки</b>\n\n"
             f"Твой TGID:\n<code>{message.from_user.id}</code>\n\n"
-            f"Чтобы позвонить:\n"
-            f"<code>/callme TGID</code>\n\n"
-            f"ℹ️ Подробнее:\n"
-            f"<code>/callmeinfo</code>"
+            f"Чтобы позвонить:\n<code>/callme TGID</code>\n\n"
+            f"ℹ️ Подробнее:\n<code>/callmeinfo</code>"
         )
         return
 
@@ -174,7 +160,6 @@ async def callme_cmd(message: types.Message):
 
     await message.answer("📨 Запрос на звонок отправлен")
 
-
 # ─── Callback: принять ───────────────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_accept:"))
 async def callme_accept_cb(callback: CallbackQuery):
@@ -197,7 +182,6 @@ async def callme_accept_cb(callback: CallbackQuery):
     await callback.message.edit_text("✅ Звонок принят")
     await callback.answer()
 
-
 # ─── Callback: отклонить ─────────────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_deny:"))
 async def callme_deny_cb(callback: CallbackQuery):
@@ -210,7 +194,6 @@ async def callme_deny_cb(callback: CallbackQuery):
     await callback.bot.send_message(from_id, "❌ Пользователь отклонил звонок")
     await callback.message.edit_text("❌ Звонок отклонён")
     await callback.answer()
-
 
 # ─── WebSocket signaling ─────────────────
 @callme_api_router.websocket("/ws/{call_id}")
@@ -229,7 +212,6 @@ async def callme_ws(ws: WebSocket, call_id: str):
         active_ws[call_id].remove(ws)
         logger.info(f"❌ WS соединение закрыто call_id={call_id}")
 
-
 # ─── TURN/STUN endpoint ──────────────────
 @callme_api_router.get("/turn")
 async def get_turn_config():
@@ -243,4 +225,17 @@ async def get_turn_config():
                 "credential": os.getenv("TURNPASSWORD")
             }
         ]
+    }
+
+# ─── GET USER INFO BY TGID ──────────────────
+@callme_api_router.get("/user/{tgid}")
+async def get_user_info(tgid: int):
+    users = load_callme_users()
+    user = users.get(str(tgid))
+    if not user:
+        return {"id": tgid, "name": "Пользователь", "avatar": None}
+    return {
+        "id": user["id"],
+        "name": user["name"],
+        "avatar": user.get("avatar")
     }
