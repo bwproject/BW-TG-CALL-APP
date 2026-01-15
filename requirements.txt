@@ -1,6 +1,6 @@
 aiogram==3.15.0
-fastapi==0.111.1
-uvicorn[standard]==0.23.2
-aiohttp==3.8.5
-python-dotenv==1.0.0
+fastapi
+uvicorn[standard]
+aiohttp
+python-dotenv
 websockets
