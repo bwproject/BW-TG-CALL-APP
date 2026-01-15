@@ -117,7 +117,7 @@ async def save_callme_user(message: types.Message):
 async def callmeinfo_cmd(message: types.Message):
     await message.answer(
         "📞 <b>CallMe</b>\n\n"
-        "Это встроенные видеозвонки через Telegram WebApp.\n\n"
+        "Это встроенные аудио/видеозвонки через Telegram WebApp.\n\n"
         "🔹 Видео и аудио через WebRTC\n"
         "🔹 Работает на iOS и Android\n"
         "🔹 Камера и микрофон — только по кнопке\n"
@@ -137,7 +137,7 @@ async def callme_cmd(message: types.Message):
     if len(args) == 1:
         await message.answer(
             f"Привет, {message.from_user.first_name} 👋\n\n"
-            f"📞 <b>CallMe — видеозвонки</b>\n\n"
+            f"📞 <b>CallMe — аудио/видеозвонки</b>\n\n"
             f"Твой TGID:\n<code>{message.from_user.id}</code>\n\n"
             f"Чтобы позвонить:\n"
             f"<code>/callme TGID</code>\n\n"
