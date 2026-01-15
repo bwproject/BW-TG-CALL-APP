@@ -42,6 +42,27 @@ let rtcConfig = null;
 if (window.Telegram?.WebApp) Telegram.WebApp.expand();
 const tgUser = Telegram.WebApp?.initDataUnsafe?.user;
 
+// ================== HELPERS ==================
+async function loadUserInfo(tgid) {
+    try {
+        const res = await fetch(`/api/callme/user/${tgid}`);
+        if (!res.ok) throw new Error("user not found");
+        return await res.json();
+    } catch {
+        return null;
+    }
+}
+
+function setRemoteAvatar(user) {
+    if (user?.avatar) {
+        remoteAvatar.innerHTML =
+            `<img src="${user.avatar}" class="avatar-img">`;
+    } else {
+        remoteAvatar.textContent = "👤";
+    }
+    remoteAvatar.style.display = "flex";
+}
+
 // ================== WEBSOCKET ==================
 const callId = location.search.substring(1);
 const wsProtocol = location.protocol === "https:" ? "wss://" : "ws://";
@@ -54,16 +75,14 @@ ws.onerror = () => showStatus("Ошибка WS ⚠️");
 ws.onmessage = async e => {
     const data = JSON.parse(e.data);
 
-    // --- info о собеседнике ---
-    if (data.type === "peer-info") {
-        callHeader.textContent = `📞 Звонок с ${data.user?.name || "Пользователь"}`;
+    // --- информация о собеседнике ---
+    if (data.type === "peer-info" && data.user_id) {
+        const user = await loadUserInfo(data.user_id);
 
-        if (data.user?.photo) {
-            remoteAvatar.innerHTML = `<img src="${data.user.photo}" class="avatar-img">`;
-        } else {
-            remoteAvatar.textContent = "👤";
-        }
-        remoteAvatar.style.display = "flex";
+        callHeader.textContent =
+            `📞 Звонок с ${user?.name || "Пользователь"}`;
+
+        setRemoteAvatar(user);
     }
 
     // --- WebRTC ---
@@ -83,7 +102,7 @@ ws.onmessage = async e => {
     }
 };
 
-// ================== TURN/STUN loader ==================
+// ================== TURN/STUN ==================
 async function loadTurnConfig() {
     const res = await fetch("/api/callme/turn");
     const data = await res.json();
@@ -125,8 +144,8 @@ async function startCall() {
             video: { facingMode: currentFacingMode }
         });
 
-        localStream.getTracks().forEach(track =>
-            pc.addTrack(track, localStream)
+        localStream.getTracks().forEach(t =>
+            pc.addTrack(t, localStream)
         );
 
         localVideo.srcObject = localStream;
@@ -172,40 +191,37 @@ function toggleMic() {
 
 async function switchCamera() {
     if (!localStream || !videoEnabled) return;
-    currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+    currentFacingMode =
+        currentFacingMode === "user" ? "environment" : "user";
+
     const newStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: currentFacingMode }
     });
+
     const newTrack = newStream.getVideoTracks()[0];
     const sender = pc.getSenders().find(s => s.track?.kind === "video");
     if (sender) await sender.replaceTrack(newTrack);
+
     localStream.getVideoTracks().forEach(t => t.stop());
     localStream.addTrack(newTrack);
     localVideo.srcObject = localStream;
 }
-
-// ================== SPEAKER ==================
-speakerBtn.onclick = () => {
-    speakerMenu.style.display =
-        speakerMenu.style.display === "flex" ? "none" : "flex";
-};
-
-speakerMenu.onclick = e => {
-    if (!e.target.dataset.mode) return;
-    speakerMenu.style.display = "none";
-};
 
 // ================== END ==================
 function endCall() {
     pc?.close();
     ws.close();
     localStream?.getTracks().forEach(t => t.stop());
+
     localVideo.style.display = "none";
     remoteVideo.style.display = "none";
+
     localAvatar.style.display = "flex";
     remoteAvatar.style.display = "flex";
+
     controls.style.display = "none";
     preCallOverlay.style.display = "flex";
+
     showStatus("Звонок завершён ❌");
 }
 
@@ -220,10 +236,6 @@ function updateButtons() {
 function showStatus(text) {
     statusTextEl.textContent = text;
 }
-
-// ================== ATTENTION ==================
-attentionBtn.onclick = () => attentionModal.style.display = "flex";
-closeAttentionBtn.onclick = () => attentionModal.style.display = "none";
 
 // ================== EVENTS ==================
 startBtn.onclick = startCall;
