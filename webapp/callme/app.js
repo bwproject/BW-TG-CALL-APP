@@ -45,9 +45,7 @@ ws.onmessage = async e => {
     const data = JSON.parse(e.data);
 
     if (data.type === "peer-info") {
-        const username = data.user?.name || data.user?.username || "Пользователь";
-        callHeader.textContent = `📞 Звонок с ${username}`;
-
+        callHeader.textContent = `📞 Звонок с ${data.user?.name || "Пользователь"}`;
         if (data.user?.avatar) {
             remoteAvatar.innerHTML = `<img src="${data.user.avatar}" class="avatar-img">`;
         } else {
