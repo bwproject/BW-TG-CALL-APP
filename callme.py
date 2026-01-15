@@ -10,12 +10,7 @@ from typing import Dict, List, Optional
 
 from aiogram import Router, types
 from aiogram.filters import Command
-from aiogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    WebAppInfo,
-    CallbackQuery
-)
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, CallbackQuery
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
@@ -91,6 +86,7 @@ async def save_callme_user(message: types.Message):
     users = load_callme_users()
     user = message.from_user
     avatar = await download_avatar(message.bot, user.id)
+
     users[str(user.id)] = {
         "id": user.id,
         "name": user.first_name,
@@ -124,7 +120,6 @@ async def callmeinfo_cmd(message: types.Message):
 # ─── /callme ─────────────────────────────
 @callme_router.message(Command("callme"))
 async def callme_cmd(message: types.Message):
-    # сохраняем пользователя и аватар
     await save_callme_user(message)
 
     args = message.text.split()
@@ -134,7 +129,7 @@ async def callme_cmd(message: types.Message):
             f"📞 <b>CallMe — аудио/видеозвонки</b>\n\n"
             f"Твой TGID:\n<code>{message.from_user.id}</code>\n\n"
             f"Чтобы позвонить:\n<code>/callme TGID</code>\n\n"
-            f"ℹ️ Подробнее:\n<code>/callmeinfo</code>"
+            f"ℹ️ Подробнее: <code>/callmeinfo</code>"
         )
         return
 
@@ -204,10 +199,24 @@ async def callme_ws(ws: WebSocket, call_id: str):
 
     try:
         while True:
-            data = await ws.receive_text()
+            data = await ws.receive_json()
+
+            # Если это peer-info, добавим аватар и имя из callme.json
+            if data.get("type") == "peer-info":
+                users = load_callme_users()
+                user_id = str(data["id"])
+                user_info = users.get(user_id, {})
+                data["user"] = {
+                    "id": user_id,
+                    "name": user_info.get("name"),
+                    "avatar": user_info.get("avatar")
+                }
+
+            # Отправляем всем остальным клиентам
             for client in active_ws[call_id]:
                 if client != ws:
-                    await client.send_text(data)
+                    await client.send_json(data)
+
     except WebSocketDisconnect:
         active_ws[call_id].remove(ws)
         logger.info(f"❌ WS соединение закрыто call_id={call_id}")
@@ -225,17 +234,4 @@ async def get_turn_config():
                 "credential": os.getenv("TURNPASSWORD")
             }
         ]
-    }
-
-# ─── GET USER INFO BY TGID ──────────────────
-@callme_api_router.get("/user/{tgid}")
-async def get_user_info(tgid: int):
-    users = load_callme_users()
-    user = users.get(str(tgid))
-    if not user:
-        return {"id": tgid, "name": "Пользователь", "avatar": None}
-    return {
-        "id": user["id"],
-        "name": user["name"],
-        "avatar": user.get("avatar")
     }
