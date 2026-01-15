@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 WEBAPP_HOST = os.getenv("WEBAPP_HOST")
 if not WEBAPP_HOST:
     raise RuntimeError("❌ WEBAPP_HOST не задан в .env")
-
 WEBAPP_HOST = WEBAPP_HOST.rstrip("/")
 
 # ─── Paths ───────────────────────────────
@@ -47,32 +46,19 @@ def generate_call_id(tg1: int, tg2: int) -> str:
     raw = f"{tg1}:{tg2}:{time.time()}"
     return hashlib.sha256(raw.encode()).hexdigest()[:24]
 
-
 def make_webapp_kb(call_url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📞 Открыть звонок",
-                    web_app=WebAppInfo(url=call_url),
-                )
-            ]
+            [InlineKeyboardButton(text="📞 Открыть звонок", web_app=WebAppInfo(url=call_url))]
         ]
     )
-
 
 def incoming_call_kb(from_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(
-                    text="✅ Принять",
-                    callback_data=f"callme_accept:{from_id}",
-                ),
-                InlineKeyboardButton(
-                    text="❌ Отклонить",
-                    callback_data=f"callme_deny:{from_id}",
-                ),
+                InlineKeyboardButton(text="✅ Принять", callback_data=f"callme_accept:{from_id}"),
+                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"callme_deny:{from_id}"),
             ]
         ]
     )
@@ -84,7 +70,6 @@ def load_callme_users() -> dict:
     with open(CALLME_JSON, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def save_callme_users(data: dict):
     with open(CALLME_JSON, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -95,39 +80,30 @@ async def download_avatar(bot, user_id: int) -> Optional[str]:
         photos = await bot.get_user_profile_photos(user_id, limit=1)
     except TelegramBadRequest:
         return None
-
     if not photos.photos:
         return None
-
     photo = photos.photos[0][-1]
     file = await bot.get_file(photo.file_id)
-
     avatar_path = f"{AVATAR_DIR}/{user_id}.jpg"
     avatar_url = f"https://api.telegram.org/file/bot{bot.token}/{file.file_path}"
-
     async with aiohttp.ClientSession() as session:
         async with session.get(avatar_url) as resp:
             if resp.status == 200:
                 with open(avatar_path, "wb") as f:
                     f.write(await resp.read())
-
     return f"/callme/avatar/{user_id}.jpg"
-
 
 async def save_callme_user(message: types.Message):
     users = load_callme_users()
     user = message.from_user
-
     avatar = await download_avatar(message.bot, user.id)
-
     users[str(user.id)] = {
         "id": user.id,
-        "name": user.first_name,
-        "username": user.username,
+        "name": user.first_name or "Пользователь",
+        "username": user.username or "",
         "avatar": avatar,
         "updated_at": int(time.time()),
     }
-
     save_callme_users(users)
 
 # ─── /callmeinfo ─────────────────────────
@@ -135,8 +111,7 @@ async def save_callme_user(message: types.Message):
 async def callmeinfo_cmd(message: types.Message):
     await message.answer(
         "📞 <b>BW CallMe</b>\n\n"
-        "Встроенные аудио и видеозвонки прямо внутри Telegram "
-        "через WebApp.\n\n"
+        "Встроенные аудио и видеозвонки прямо внутри Telegram через WebApp.\n\n"
         "🔹 WebRTC (видео и аудио)\n"
         "🔹 Поддержка iOS и Android\n"
         "🔹 Камера и микрофон — только по действию пользователя\n"
@@ -145,7 +120,7 @@ async def callmeinfo_cmd(message: types.Message):
         "<code>/callme TGID</code>\n\n"
         "💡 Код модуля вынесен в отдельный репозиторий:\n"
         "https://github.com/bwproject/BW-TG-CALL-APP\n"
-        "⭐️ Отделтный бот только с Mini App @BWCallMeBot\n\n"
+        "⭐️ Отдельный бот только с Mini App @BWCallMeBot\n\n"
         "🤫 И да… не показывайте это одной конторе из трёх букв 😉"
     )
 
@@ -153,7 +128,6 @@ async def callmeinfo_cmd(message: types.Message):
 @callme_router.message(Command("callme"))
 async def callme_cmd(message: types.Message):
     await save_callme_user(message)
-
     args = message.text.split()
     if len(args) == 1:
         await message.answer(
@@ -177,7 +151,6 @@ async def callme_cmd(message: types.Message):
 
     try:
         pending_calls[target_id] = message.from_user.id
-
         await message.bot.send_message(
             target_id,
             f"📞 <b>Входящий звонок</b>\n\n"
@@ -185,26 +158,12 @@ async def callme_cmd(message: types.Message):
             f"TGID: <code>{message.from_user.id}</code>",
             reply_markup=incoming_call_kb(message.from_user.id),
         )
-
-    except TelegramForbiddenError:
+    except (TelegramForbiddenError, TelegramBadRequest):
         pending_calls.pop(target_id, None)
         await message.answer(
-            f"❌ Невозможно отправить сообщение пользователю "
-            f"<code>{target_id}</code>\n\n"
+            f"❌ Невозможно отправить сообщение пользователю <code>{target_id}</code>\n"
             "Он ещё ни разу не запускал бота."
         )
-        return
-
-    except TelegramBadRequest as e:
-        pending_calls.pop(target_id, None)
-        if "chat not found" in str(e):
-            await message.answer(
-                f"❌ Невозможно отправить сообщение пользователю "
-                f"<code>{target_id}</code>\n\n"
-                "Он ещё ни разу не запускал бота."
-            )
-        else:
-            await message.answer(f"❌ Ошибка Telegram API:\n<code>{e}</code>")
         return
 
     await message.answer("📨 Запрос на звонок отправлен")
@@ -214,7 +173,6 @@ async def callme_cmd(message: types.Message):
 async def callme_accept_cb(callback: CallbackQuery):
     from_id = int(callback.data.split(":")[1])
     to_id = callback.from_user.id
-
     if pending_calls.get(to_id) != from_id:
         await callback.answer("❌ Вызов неактивен", show_alert=True)
         return
@@ -222,19 +180,11 @@ async def callme_accept_cb(callback: CallbackQuery):
     call_id = generate_call_id(from_id, to_id)
     del pending_calls[to_id]
 
-    call_url = (
-        f"{WEBAPP_HOST}/callme/index.html"
-        f"?{from_id}_{to_id}_{call_id}"
-    )
-
+    call_url = f"{WEBAPP_HOST}/callme/index.html?{from_id}_{to_id}_{call_id}"
     kb = make_webapp_kb(call_url)
 
     for uid in (from_id, to_id):
-        await callback.bot.send_message(
-            uid,
-            "✅ Соединение установлено",
-            reply_markup=kb,
-        )
+        await callback.bot.send_message(uid, "✅ Соединение установлено", reply_markup=kb)
 
     await callback.message.edit_text("✅ Звонок принят")
     await callback.answer()
@@ -244,10 +194,8 @@ async def callme_accept_cb(callback: CallbackQuery):
 async def callme_deny_cb(callback: CallbackQuery):
     from_id = int(callback.data.split(":")[1])
     to_id = callback.from_user.id
-
     if pending_calls.get(to_id) == from_id:
         del pending_calls[to_id]
-
     await callback.bot.send_message(from_id, "❌ Пользователь отклонил звонок")
     await callback.message.edit_text("❌ Звонок отклонён")
     await callback.answer()
@@ -262,21 +210,18 @@ async def callme_ws(ws: WebSocket, call_id: str):
     try:
         while True:
             data = await ws.receive_json()
-
             if data.get("type") == "peer-info":
                 users = load_callme_users()
                 uid = str(data.get("id"))
                 user = users.get(uid, {})
                 data["user"] = {
                     "id": uid,
-                    "name": user.get("name"),
-                    "avatar": user.get("avatar"),
+                    "name": user.get("name") or "Пользователь",
+                    "avatar": user.get("avatar") or None,
                 }
-
             for client in active_ws[call_id]:
                 if client is not ws:
                     await client.send_json(data)
-
     except WebSocketDisconnect:
         active_ws[call_id].remove(ws)
         logger.info(f"❌ WS отключён: call_id={call_id}")
