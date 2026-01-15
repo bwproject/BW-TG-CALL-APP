@@ -22,6 +22,7 @@ from callme import callme_router, callme_api_router
 load_dotenv()
 API_TOKEN = os.getenv("TOKEN")
 WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
+WEBAPP_HOST = os.getenv("WEBAPP_HOST", "https://webapp.projectbw.ru")
 WEBAPP_FOLDER = "webapp"
 API_PORT = int(os.getenv("API_PORT", "22870"))
 
