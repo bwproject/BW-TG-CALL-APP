@@ -1,7 +1,3 @@
-Вот полный обновлённый и детальный README для GitHub по модулю BW CallMe, с поправленным автором и путём webapp/callme/callme.json:
-
-⸻
-
 BW CallMe — Аудио и видеозвонки внутри Telegram WebApp
 
 BW CallMe — это модуль для Telegram, позволяющий совершать аудио- и видеозвонки прямо через WebApp. Использует WebRTC и WebSocket для передачи видео и аудио между пользователями.
