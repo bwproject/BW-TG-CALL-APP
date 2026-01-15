@@ -111,23 +111,25 @@ async def save_callme_user(message: types.Message):
 
     save_callme_users(users)
 
-
 # ─── /callmeinfo ─────────────────────────
 @callme_router.message(Command("callmeinfo"))
 async def callmeinfo_cmd(message: types.Message):
     await message.answer(
         "📞 <b>BW CallMe</b>\n\n"
-        "Это встроенные аудио/видеозвонки через Telegram WebApp.\n\n"
-        "🔹 Видео и аудио через WebRTC\n"
-        "🔹 Работает на iOS и Android\n"
-        "🔹 Камера и микрофон — только по кнопке\n"
-        "🔹 Громкая связь зависит от ОС\n\n"
-        "Чтобы позвонить:\n"
+        "BW CallMe — это встроенные аудио- и видеозвонки, "
+        "работающие прямо внутри Telegram через WebApp.\n\n"
+        "🔹 Передача видео и аудио по WebRTC\n"
+        "🔹 Поддержка iOS и Android\n"
+        "🔹 Доступ к камере и микрофону — только по действию пользователя\n"
+        "🔹 Переключение динамика зависит от возможностей ОС\n\n"
+        "▶️ <b>Как позвонить</b>\n"
         "<code>/callme TGID</code>\n\n"
-        "Мы спецально для Вас вынесли код этого модуля\n"
-        "в отдельный репозиторий что бы вы могли его посмотреть\n"
-        "GitHub - https://github.com/bwproject/BW-TG-CALL-APP\n"
-        "Главное не показывайте этл конторе оптимисиов из 3 букв"
+        "💡 <b>Открытый код</b>\n"
+        "Мы вынесли модуль CallMe в отдельный репозиторий, "
+        "чтобы вы могли изучить его реализацию:\n"
+        "🔗 https://github.com/bwproject/BW-TG-CALL-APP\n\n"
+        "🤫 И, пожалуйста, не показывайте это одной очень любопытной "
+        "конторе из трёх букв 😉"
     )
 
 
