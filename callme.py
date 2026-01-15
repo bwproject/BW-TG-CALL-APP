@@ -159,9 +159,9 @@ async def callme_cmd(message: types.Message):
         await message.answer(
             f"Привет, {message.from_user.first_name} 👋\n\n"
             f"📞 <b>CallMe — аудио/видеозвонки</b>\n\n"
-            f"Твой TGID:\n<code>{message.from_user.id}</code>\n\n"
+            f"Твой TGID:\n<code>{message.from_user.id}</code> - Нажми и он скопируется\n\n"
             f"Чтобы позвонить:\n<code>/callme TGID</code>\n\n"
-            f"ℹ️ Подробнее: <code>/callmeinfo</code>"
+            f"ℹ️ Подробнее о Mini App: /callmeinfo"
         )
         return
 
