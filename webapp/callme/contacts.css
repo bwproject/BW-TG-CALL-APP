@@ -9,6 +9,7 @@ body {
     padding:10px;
     text-align:center;
     transition: all 0.3s ease;
+    color: #fff; /* ВСЕ тексты белые */
 }
 
 .card.show {
@@ -29,6 +30,7 @@ body {
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+    color: #fff; /* имя белое */
 }
 
 .call {
@@ -39,10 +41,20 @@ body {
     font-size:.8rem;
     padding:6px;
     cursor:pointer;
+    color: #fff; /* текст кнопки белый */
 }
 
 #list {
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));
     gap:12px;
+}
+
+/* Верхний блок пользователя */
+#me {
+    color: #fff !important; /* имя, TGID и надпись "Я" белые */
+}
+
+#me .text-muted {
+    color: #fff !important; /* TGID белый */
 }
