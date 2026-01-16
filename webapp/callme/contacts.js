@@ -1,3 +1,5 @@
+Правь тут 
+
 const tg = Telegram.WebApp;
 tg.expand();
 
@@ -11,11 +13,8 @@ document.getElementById("me-name").innerText = meData.first_name || "Польз�
 document.getElementById("me-id").innerText = meData.id;
 document.getElementById("me-avatar").src = "https://via.placeholder.com/80/333333/ffffff?text=?";
 
-// ─── Базовый URL для API ─────────────────────
-const API_BASE = "https://webapp.projectbw.ru/api/callme";
-
 // Получаем список пользователей
-fetch(`${API_BASE}/users`)
+fetch("/api/callme/users")
 .then(r => r.json())
 .then(users => {
     console.log("📋 Users loaded:", users);
@@ -47,8 +46,7 @@ fetch(`${API_BASE}/users`)
 
             el.querySelector("button").onclick = () => {
                 console.log(`📞 Sending call request from ${meData.id} to ${u.id}`);
-
-                fetch(`${API_BASE}/call`, {
+                fetch("/api/callme/call", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ user_id: meData.id, tg_id: u.id })
@@ -61,7 +59,7 @@ fetch(`${API_BASE}/users`)
                         const callId = `${meData.id}_${u.id}`;
                         console.log("🔌 Opening WebSocket:", callId);
 
-                        const ws = new WebSocket(`wss://webapp.projectbw.ru/api/callme/ws/${callId}`);
+                        const ws = new WebSocket(`wss://${location.host}/api/callme/ws/${callId}`);
 
                         ws.onopen = () => console.log("✅ WebSocket connected");
                         ws.onclose = () => console.log("⚠ WebSocket closed");
