@@ -1,24 +1,46 @@
-const API_URL = "/api/callme/users";
-const CALL_API = "/api/callme/call";
+const API_USERS = "/api/callme/users";
+const API_CALL = "/api/callme/call";
 
+let currentUser = null;
+
+// Получаем текущего пользователя через Telegram WebApp
+function initWebApp() {
+    if (window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        currentUser = {
+            id: tg.initDataUnsafe.user.id,
+            name: tg.initDataUnsafe.user.first_name || "Пользователь",
+            avatar: tg.initDataUnsafe.user.photo_url || "/callme/avatar/default.jpg",
+        };
+        renderCurrentUser(currentUser);
+    } else {
+        console.warn("⚠ Telegram WebApp API недоступно");
+        currentUser = {id: 0, name: "Гость", avatar: "/callme/avatar/default.jpg"};
+        renderCurrentUser(currentUser);
+    }
+}
+
+// Отрисовка верхнего блока "Я"
+function renderCurrentUser(user) {
+    document.getElementById("current-name").textContent = user.name;
+    document.getElementById("current-tgid").textContent = "TGID: " + user.id;
+    document.getElementById("current-avatar").src = user.avatar;
+}
+
+// Получение всех пользователей
 async function fetchUsers() {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_USERS);
     const users = await res.json();
     return users;
 }
 
-function renderCurrentUser(user) {
-    document.getElementById("current-name").textContent = user.name;
-    document.getElementById("current-tgid").textContent = "TGID: " + user.id;
-    document.getElementById("current-avatar").src = user.avatar || "/callme/avatar/default.jpg";
-}
-
-function renderContacts(users, currentUserId) {
+// Отрисовка списка контактов
+function renderContacts(users, currentId) {
     const container = document.getElementById("contacts");
     container.innerHTML = "";
 
     users.forEach(user => {
-        if (user.id === currentUserId) return;
+        if (user.id === currentId) return;
 
         const div = document.createElement("div");
         div.className = "contact";
@@ -34,11 +56,11 @@ function renderContacts(users, currentUserId) {
         const btn = document.createElement("button");
         btn.textContent = "📞 Позвонить";
         btn.onclick = async () => {
-            await fetch(CALL_API, {
+            await fetch(API_CALL, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
-                    user_id: currentUserId,
+                    user_id: currentId,
                     tg_id: user.id
                 })
             });
@@ -51,10 +73,10 @@ function renderContacts(users, currentUserId) {
     });
 }
 
+// Инициализация страницы
 async function init() {
+    initWebApp();
     const users = await fetchUsers();
-    const currentUser = users[users.length - 1]; // считаем последним вошедшим
-    renderCurrentUser(currentUser);
     renderContacts(users, currentUser.id);
 }
 
