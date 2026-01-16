@@ -60,7 +60,7 @@ body {
     font-size: 1.1rem;
 }
 #me-id {
-    color: #ccc; /* немного светлее для TGID */
+    color: #fff; /* TGID теперь белый */
 }
 
 /* ─── CONTACTS HEADER ─── */
