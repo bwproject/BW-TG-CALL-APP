@@ -18,7 +18,21 @@ body {
     border-radius: 14px;
     padding: 10px;
     text-align: center;
-    color: #fff; /* текст внутри карточки белый */
+    color: #fff;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.4s;
+    cursor: pointer;
+    opacity: 0;
+}
+
+/* ─── CARD SHOW (анимация появления) ─── */
+.card.show {
+    opacity: 1;
+}
+
+/* ─── CARD HOVER ─── */
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* ─── CARD IMAGE ─── */
@@ -27,6 +41,8 @@ body {
     height: 70px;
     border-radius: 50%;
     object-fit: cover;
+    margin-bottom: 6px;
+    background: #333; /* фон для пустых аватаров */
 }
 
 /* ─── NAME ─── */
@@ -36,7 +52,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #fff; /* белый текст */
+    color: #fff;
 }
 
 /* ─── CALL BUTTON ─── */
@@ -47,23 +63,35 @@ body {
     border-radius: 10px;
     font-size: 0.8rem;
     padding: 6px;
-    color: #fff; /* текст кнопки белый */
+    color: #fff;
+    transition: background 0.2s, transform 0.2s;
+}
+
+/* ─── CALL BUTTON HOVER ─── */
+.call:hover {
+    background: #1fa851;
+    transform: scale(1.05);
 }
 
 /* ─── USER INFO ─── */
 #me {
     background: #1e1e1e;
     color: #fff;
+    padding: 15px;
+    border-radius: 14px;
+    margin-bottom: 15px;
+    text-align: center;
 }
 #me-name {
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
 }
 #me-id {
-    color: #fff; /* TGID теперь белый */
+    color: #fff;
 }
 
 /* ─── CONTACTS HEADER ─── */
 h5 {
-    color: #fff; /* белый заголовок */
+    color: #fff;
+    margin-bottom: 10px;
 }
