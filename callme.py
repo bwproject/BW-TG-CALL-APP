@@ -18,7 +18,8 @@ from aiogram.types import (
 )
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket
+from fastapi.websockets import WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,26 @@ def generate_call_id(tg1: int, tg2: int) -> str:
 def make_webapp_kb(call_url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📞 Открыть звонок", web_app=WebAppInfo(url=call_url))]
+            [
+                InlineKeyboardButton(
+                    text="📞 Открыть звонок",
+                    web_app=WebAppInfo(url=call_url),
+                )
+            ]
+        ]
+    )
+
+def callme_contacts_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📇 Контакты CallMe",
+                    web_app=WebAppInfo(
+                        url=f"{WEBAPP_HOST}/callme/contacts.html"
+                    ),
+                )
+            ]
         ]
     )
 
@@ -57,8 +77,14 @@ def incoming_call_kb(from_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="✅ Принять", callback_data=f"callme_accept:{from_id}"),
-                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"callme_deny:{from_id}"),
+                InlineKeyboardButton(
+                    text="✅ Принять",
+                    callback_data=f"callme_accept:{from_id}",
+                ),
+                InlineKeyboardButton(
+                    text="❌ Отклонить",
+                    callback_data=f"callme_deny:{from_id}",
+                ),
             ]
         ]
     )
@@ -80,23 +106,28 @@ async def download_avatar(bot, user_id: int) -> Optional[str]:
         photos = await bot.get_user_profile_photos(user_id, limit=1)
     except TelegramBadRequest:
         return None
+
     if not photos.photos:
         return None
+
     photo = photos.photos[0][-1]
     file = await bot.get_file(photo.file_id)
     avatar_path = f"{AVATAR_DIR}/{user_id}.jpg"
     avatar_url = f"https://api.telegram.org/file/bot{bot.token}/{file.file_path}"
+
     async with aiohttp.ClientSession() as session:
         async with session.get(avatar_url) as resp:
             if resp.status == 200:
                 with open(avatar_path, "wb") as f:
                     f.write(await resp.read())
+
     return f"/callme/avatar/{user_id}.jpg"
 
 async def save_callme_user(message: types.Message):
     users = load_callme_users()
     user = message.from_user
     avatar = await download_avatar(message.bot, user.id)
+
     users[str(user.id)] = {
         "id": user.id,
         "name": user.first_name or "Пользователь",
@@ -104,6 +135,7 @@ async def save_callme_user(message: types.Message):
         "avatar": avatar,
         "updated_at": int(time.time()),
     }
+
     save_callme_users(users)
 
 # ─── /callmeinfo ─────────────────────────
@@ -134,11 +166,11 @@ async def callme_cmd(message: types.Message):
         await message.answer(
             f"Привет, {message.from_user.first_name} 👋\n\n"
             f"📞 <b>CallMe — аудио/видеозвонки</b>\n\n"
-            f"Твой TGID:\n<code>{message.from_user.id}</code> — нажми, чтобы скопировать\n\n"
+            f"Твой TGID:\n<code>{message.from_user.id}</code> - Нажми и он скопируется\n\n"
             f"Чтобы позвонить:\n<code>/callme TGID</code>\n\n"
-            f"Или выбери контакт из списка 👇\n\n"
             f"ℹ️ Подробнее о Mini App: /callmeinfo",
-            reply_markup=callme_contacts_kb()
+            f"Так же можно выбрать контакт в WebApp 👇"
+            reply_markup=callme_contacts_kb(),  # ← ДОБАВЛЕНА ТОЛЬКО КНОПКА
         )
         return
 
@@ -176,6 +208,7 @@ async def callme_cmd(message: types.Message):
 async def callme_accept_cb(callback: CallbackQuery):
     from_id = int(callback.data.split(":")[1])
     to_id = callback.from_user.id
+
     if pending_calls.get(to_id) != from_id:
         await callback.answer("❌ Вызов неактивен", show_alert=True)
         return
@@ -197,8 +230,10 @@ async def callme_accept_cb(callback: CallbackQuery):
 async def callme_deny_cb(callback: CallbackQuery):
     from_id = int(callback.data.split(":")[1])
     to_id = callback.from_user.id
+
     if pending_calls.get(to_id) == from_id:
         del pending_calls[to_id]
+
     await callback.bot.send_message(from_id, "❌ Пользователь отклонил звонок")
     await callback.message.edit_text("❌ Звонок отклонён")
     await callback.answer()
@@ -208,7 +243,6 @@ async def callme_deny_cb(callback: CallbackQuery):
 async def callme_ws(ws: WebSocket, call_id: str):
     await ws.accept()
     active_ws.setdefault(call_id, []).append(ws)
-    logger.info(f"🌐 WS подключён: call_id={call_id}")
 
     try:
         while True:
@@ -220,24 +254,21 @@ async def callme_ws(ws: WebSocket, call_id: str):
                 data["user"] = {
                     "id": uid,
                     "name": user.get("name") or "Пользователь",
-                    "avatar": user.get("avatar") or None,
+                    "avatar": user.get("avatar"),
                 }
+
             for client in active_ws[call_id]:
                 if client is not ws:
                     await client.send_json(data)
     except WebSocketDisconnect:
         active_ws[call_id].remove(ws)
-        logger.info(f"❌ WS отключён: call_id={call_id}")
 
 # ─── CallMe Contacts API ─────────────────
 @callme_api_router.get("/users")
 async def callme_users_api():
-    """
-    Отдаёт список пользователей для WebApp контактов
-    """
     users = load_callme_users()
     return list(users.values())
-    
+
 # ─── TURN / STUN ─────────────────────────
 @callme_api_router.get("/turn")
 async def get_turn_config():
