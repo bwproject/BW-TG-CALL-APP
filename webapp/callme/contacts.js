@@ -1,10 +1,10 @@
-Telegram.WebApp.expand();
-
 const tg = Telegram.WebApp;
-const me = tg.initDataUnsafe.user;
+tg.expand();
 
-/* ─── Render current user ─── */
-document.getElementById("me-name").innerText = me.first_name || "Пользователь";
+const me = tg.initDataUnsafe?.user || { id: 0, first_name: "Пользователь" };
+
+// ─── Render current user ───
+document.getElementById("me-name").innerText = me.first_name;
 document.getElementById("me-id").innerText = me.id;
 
 const meAvatar = document.getElementById("me-avatar");
@@ -14,7 +14,7 @@ if (me.photo_url) {
     meAvatar.src = "https://via.placeholder.com/80/333333/ffffff?text=?";
 }
 
-/* ─── Load contacts ─── */
+// ─── Load contacts ───
 fetch("/api/callme/users")
 .then(r => r.json())
 .then(users => {
@@ -37,7 +37,7 @@ fetch("/api/callme/users")
             `;
 
             el.querySelector("button").onclick = () => {
-                // Отправляем данные в бот
+                // Отправляем команду /callme TGID боту
                 tg.sendData(`/callme ${u.id}`);
                 tg.close();
             };
