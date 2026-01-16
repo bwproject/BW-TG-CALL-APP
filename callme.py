@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List, Optional
 
 import aiohttp
-from aiogram import Router, types
+from aiogram import Router, Bot, types
 from aiogram.filters import Command
 from aiogram.types import (
     InlineKeyboardMarkup,
@@ -49,12 +49,7 @@ def generate_call_id(tg1: int, tg2: int) -> str:
 def make_webapp_kb(call_url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📞 Открыть звонок",
-                    web_app=WebAppInfo(url=call_url),
-                )
-            ]
+            [InlineKeyboardButton(text="📞 Открыть звонок", web_app=WebAppInfo(url=call_url))]
         ]
     )
 
@@ -74,14 +69,8 @@ def incoming_call_kb(from_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(
-                    text="✅ Принять",
-                    callback_data=f"callme_accept:{from_id}",
-                ),
-                InlineKeyboardButton(
-                    text="❌ Отклонить",
-                    callback_data=f"callme_deny:{from_id}",
-                ),
+                InlineKeyboardButton(text="✅ Принять", callback_data=f"callme_accept:{from_id}"),
+                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"callme_deny:{from_id}"),
             ]
         ]
     )
@@ -98,7 +87,7 @@ def save_callme_users(data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # ─── Avatar ──────────────────────────────
-async def download_avatar(bot, user_id: int) -> Optional[str]:
+async def download_avatar(bot: Bot, user_id: int) -> Optional[str]:
     try:
         photos = await bot.get_user_profile_photos(user_id, limit=1)
     except TelegramBadRequest:
@@ -120,10 +109,10 @@ async def download_avatar(bot, user_id: int) -> Optional[str]:
 
     return f"/callme/avatar/{user_id}.jpg"
 
-async def save_callme_user(message: types.Message):
+async def save_callme_user(bot: Bot, message: types.Message):
     users = load_callme_users()
     user = message.from_user
-    avatar = await download_avatar(message.bot, user.id)
+    avatar = await download_avatar(bot, user.id)
 
     users[str(user.id)] = {
         "id": user.id,
@@ -132,6 +121,7 @@ async def save_callme_user(message: types.Message):
         "avatar": avatar,
         "updated_at": int(time.time()),
     }
+
     save_callme_users(users)
 
 # ─── /callmeinfo ─────────────────────────
@@ -154,7 +144,8 @@ async def callmeinfo_cmd(message: types.Message):
 
 # ─── /callme ─────────────────────────────
 async def callme_cmd(message: types.Message):
-    await save_callme_user(message)
+    bot = message.bot
+    await save_callme_user(bot, message)
 
     args = message.text.split()
     if len(args) == 1:
@@ -181,7 +172,7 @@ async def callme_cmd(message: types.Message):
 
     try:
         pending_calls[target_id] = message.from_user.id
-        await message.bot.send_message(
+        await bot.send_message(
             target_id,
             f"📞 <b>Входящий звонок</b>\n\n"
             f"От: {message.from_user.first_name}\n"
@@ -198,13 +189,13 @@ async def callme_cmd(message: types.Message):
 
     await message.answer("📨 Запрос на звонок отправлен")
 
-# ─── WebApp POST endpoint (с реальным ботом) ─────────────
-def register_callme_api(bot: types.Bot):
+# ─── WebApp POST endpoint ─────────────────
+def register_callme_api(bot: Bot):
     @callme_api_router.post("/call")
     async def callme_call_api(request: Request):
         data = await request.json()
-        user_id = data.get("user_id")
-        tg_id = data.get("tg_id")
+        user_id = data.get("user_id")  # кто нажал кнопку
+        tg_id = data.get("tg_id")      # кому звонить
 
         if not user_id or not tg_id:
             return {"ok": False, "error": "Missing user_id or tg_id"}
@@ -218,13 +209,26 @@ def register_callme_api(bot: types.Bot):
             chat=chat,
             from_user=from_user,
             text=f"/callme {tg_id}",
-            bot=bot  # <- передаём реальный бот
+            bot=bot
         )
 
         await callme_cmd(message)
         return {"ok": True}
 
-# ─── Callback: принять ───────────────────
+# ─── Callback: позвонить из WebApp ──────────
+@callme_router.callback_query(lambda c: c.data.startswith("callme_user:"))
+async def callme_user_cb(callback: CallbackQuery):
+    target_id = int(callback.data.split(":")[1])
+    message = types.Message(
+        chat=types.Chat(id=callback.from_user.id, type="private"),
+        from_user=callback.from_user,
+        text=f"/callme {target_id}",
+        bot=callback.bot
+    )
+    await callme_cmd(message)
+    await callback.answer("✅ Запрос на звонок отправлен")
+
+# ─── Callback: принять ──────────────────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_accept:"))
 async def callme_accept_cb(callback: CallbackQuery):
     from_id = int(callback.data.split(":")[1])
@@ -246,7 +250,7 @@ async def callme_accept_cb(callback: CallbackQuery):
     await callback.message.edit_text("✅ Звонок принят")
     await callback.answer()
 
-# ─── Callback: отклонить ─────────────────
+# ─── Callback: отклонить ───────────────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_deny:"))
 async def callme_deny_cb(callback: CallbackQuery):
     from_id = int(callback.data.split(":")[1])
@@ -259,7 +263,7 @@ async def callme_deny_cb(callback: CallbackQuery):
     await callback.message.edit_text("❌ Звонок отклонён")
     await callback.answer()
 
-# ─── WebSocket signaling ─────────────────
+# ─── WebSocket signaling ───────────────────
 @callme_api_router.websocket("/ws/{call_id}")
 async def callme_ws(ws: WebSocket, call_id: str):
     await ws.accept()
@@ -284,26 +288,13 @@ async def callme_ws(ws: WebSocket, call_id: str):
     except WebSocketDisconnect:
         active_ws[call_id].remove(ws)
 
-# ─── CallMe Contacts API ─────────────────
+# ─── CallMe Contacts API ───────────────────
 @callme_api_router.get("/users")
 async def callme_users_api():
     users = load_callme_users()
     return list(users.values())
 
-# ─── Callback: позвонить пользователю из WebApp ───
-@callme_router.callback_query(lambda c: c.data.startswith("callme_user:"))
-async def callme_user_cb(callback: CallbackQuery):
-    target_id = int(callback.data.split(":")[1])
-    message = types.Message(
-        chat=types.Chat(id=callback.from_user.id, type="private"),
-        from_user=callback.from_user,
-        text=f"/callme {target_id}",
-        bot=callback.bot
-    )
-    await callme_cmd(message)
-    await callback.answer("✅ Запрос на звонок отправлен")
-
-# ─── TURN / STUN ─────────────────────────
+# ─── TURN / STUN ──────────────────────────
 @callme_api_router.get("/turn")
 async def get_turn_config():
     return {
