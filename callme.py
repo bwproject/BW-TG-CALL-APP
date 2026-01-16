@@ -17,7 +17,7 @@ from aiogram.types import (
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from fastapi import APIRouter, Request, WebSocket
 from fastapi.websockets import WebSocketDisconnect
-from main import BOT
+
 
 logger = logging.getLogger(__name__)
 
