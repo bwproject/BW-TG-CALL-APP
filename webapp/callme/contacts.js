@@ -1,27 +1,22 @@
 Telegram.WebApp.expand();
+
 const tg = Telegram.WebApp;
-const me = tg.initDataUnsafe.user;
 
-// ─── Render current user ───
-document.getElementById("me-name").innerText = me.first_name || "Пользователь";
-document.getElementById("me-id").innerText = `TGID: ${me.id}`;
-
-const meAvatar = document.getElementById("me-avatar");
-fetch("/api/callme/users")
-    .then(r => r.json())
-    .then(users => {
-        const meData = users.find(u => u.id === me.id);
-        meAvatar.src = meData?.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
-    });
-
-// ─── Load contacts ───
+// ─── Load current user from CallMe API ───
 fetch("/api/callme/users")
 .then(r => r.json())
 .then(users => {
+    const meUser = users.find(u => u.id === tg.initDataUnsafe.user.id);
+    if (meUser) {
+        document.getElementById("me-name").innerText = meUser.name;
+        document.getElementById("me-id").innerText = meUser.id;
+        document.getElementById("me-avatar").src = meUser.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
+    }
+
     const list = document.getElementById("list");
 
     users
-        .filter(u => u.id !== me.id)
+        .filter(u => u.id !== tg.initDataUnsafe.user.id)
         .forEach((u, i) => {
             const el = document.createElement("div");
             el.className = "card p-2 d-flex flex-column align-items-center gap-2";
@@ -30,35 +25,33 @@ fetch("/api/callme/users")
             el.innerHTML = `
                 <img src="${avatar}" class="rounded-circle" width="70" height="70">
                 <div class="name fw-semibold">${u.name}</div>
-                <div class="text-white small">TGID: ${u.id}</div>
+                <div>TGID: ${u.id}</div>
                 <button class="call btn btn-success btn-sm mt-2">
                     <i class="fa-solid fa-phone"></i> Позвонить
                 </button>
             `;
 
             el.querySelector("button").onclick = async () => {
-                const payload = { user_id: me.id, tg_id: u.id };
-                try {
-                    const res = await fetch("/api/callme/call", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-                    if (data.ok) {
-                        alert("✅ Запрос на звонок отправлен");
-                        tg.close();
-                    } else {
-                        alert("❌ Ошибка: " + data.error);
-                    }
-                } catch (e) {
-                    alert("❌ Ошибка запроса к боту");
-                    console.error(e);
+                // Отправка POST запроса на бэкенд
+                const resp = await fetch("/api/callme/call", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        user_id: tg.initDataUnsafe.user.id,
+                        tg_id: u.id
+                    })
+                });
+
+                const result = await resp.json();
+                if (result.ok) {
+                    tg.showAlert("✅ Запрос на звонок отправлен");
+                    tg.close();
+                } else {
+                    tg.showAlert("❌ Ошибка: " + result.error);
                 }
             };
 
             list.appendChild(el);
-
             setTimeout(() => el.classList.add("show"), i * 100);
         });
 });
