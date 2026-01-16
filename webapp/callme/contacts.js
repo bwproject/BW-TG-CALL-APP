@@ -77,7 +77,7 @@ fetch("/api/callme/users")
                     );
 
                     // Закрыть WebApp через 600ms, чтобы чат успел открыться
-                    setTimeout(() => tg.close(), 600);
+                    setTimeout(() => tg.close(), 1600);
                 };
 
                 list.appendChild(el);
