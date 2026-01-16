@@ -16,6 +16,7 @@ console.log("⚡ WebApp init, user:", meData);
 
 if (!meData) {
     alert("❌ WebApp запущен вне Telegram");
+    throw new Error("WebApp запущен вне Telegram");
 }
 
 /* ─── Отображение текущего пользователя ───── */
@@ -68,20 +69,20 @@ fetch("/api/callme/users")
                 /* ─── КНОПКА ЗВОНКА ───────────── */
                 el.querySelector(".call").onclick = () => {
                     const cmd = `/callme ${u.id}`;
+                    console.log("📞 Открываем бот с командой:", cmd);
 
-                    console.log("📞 Открываем бота с командой:", cmd);
-
+                    // Открыть чат с ботом и вставить команду
                     tg.openTelegramLink(
                         `https://t.me/${BOT_USERNAME}?text=${encodeURIComponent(cmd)}`
                     );
 
-                    // по желанию — закрыть WebApp
-                    setTimeout(() => tg.close(), 300);
+                    // Закрыть WebApp через 600ms, чтобы чат успел открыться
+                    setTimeout(() => tg.close(), 600);
                 };
 
                 list.appendChild(el);
 
-                // простая анимация
+                // Простая анимация появления
                 setTimeout(() => el.classList.add("show"), i * 80);
             });
     })
