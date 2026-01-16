@@ -180,8 +180,10 @@ async def callme_cmd(message: types.Message):
 def register_callme_api(bot: Bot):
     @callme_api_router.post("/call")
     async def callme_call_api(request: Request):
-        from_id = (await request.json()).get("user_id")
-        target_id = (await request.json()).get("tg_id")
+        # Читаем тело запроса один раз
+        data = await request.json()
+        from_id = data.get("user_id")
+        target_id = data.get("tg_id")
 
         if not from_id or not target_id:
             return {"ok": False, "error": "Missing user_id or tg_id"}
@@ -189,7 +191,11 @@ def register_callme_api(bot: Bot):
         if from_id == target_id:
             return {"ok": False, "error": "Нельзя звонить самому себе"}
 
-        await save_callme_user(bot, types.User(id=from_id, is_bot=False, first_name=f"WebAppUser_{from_id}"))
+        await save_callme_user(bot, types.User(
+            id=from_id,
+            is_bot=False,
+            first_name=f"WebAppUser_{from_id}"
+        ))
 
         try:
             pending_calls[target_id] = from_id
