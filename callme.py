@@ -269,6 +269,16 @@ async def callme_users_api():
     users = load_callme_users()
     return list(users.values())
 
+# ─── WebApp data handler ─────────────────
+@callme_router.message()
+async def webapp_data_handler(message: types.Message):
+    if message.web_app_data:
+        data = message.web_app_data.data
+        # Если это команда /callme TGID
+        if data.startswith("/callme "):
+            message.text = data
+            await callme_cmd(message)
+            
 # ─── TURN / STUN ─────────────────────────
 @callme_api_router.get("/turn")
 async def get_turn_config():
