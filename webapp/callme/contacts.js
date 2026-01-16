@@ -1,25 +1,38 @@
 const tg = Telegram.WebApp;
+
+// Ждём полной инициализации Telegram WebApp
+tg.ready();
 tg.expand();
 
-// Текущий пользователь из Telegram WebApp
-const meTG = tg.initDataUnsafe?.user;
-const meId = meTG?.id || 0;
-const meName = meTG?.first_name || "Пользователь";
-const meAvatarUrl = meTG?.photo_url || "https://via.placeholder.com/80/333333/ffffff?text=?";
+// Рендер текущего пользователя в верхнем блоке
+function renderCurrentUser(me) {
+    const meName = me.first_name || "Пользователь";
+    const meId = me.id || 0;
+    const meAvatar = me.photo_url || "https://via.placeholder.com/80/333333/ffffff?text=?";
 
-// Рендерим верхний контейнер с текущим пользователем
-document.getElementById("me-name").innerText = meName;
-document.getElementById("me-id").innerText = meId;
-document.getElementById("me-avatar").src = meAvatarUrl;
+    document.getElementById("me-name").innerText = meName;
+    document.getElementById("me-id").innerText = meId;
+    document.getElementById("me-avatar").src = meAvatar;
+}
 
-// ─── Load contacts from bot API ───
-fetch("/api/callme/users")
-.then(r => r.json())
-.then(users => {
+// Загружаем контакты с сервера
+async function loadContacts() {
+    const res = await fetch("/api/callme/users");
+    const users = await res.json();
+    const meId = tg.initDataUnsafe?.user?.id;
+
+    // Рендерим верхний контейнер
+    const meUser = users.find(u => u.id === meId);
+    if (meUser) {
+        renderCurrentUser(meUser);
+    } else if (tg.initDataUnsafe?.user) {
+        renderCurrentUser(tg.initDataUnsafe.user);
+    }
+
     const list = document.getElementById("list");
 
     users
-        .filter(u => u.id !== meId) // исключаем себя
+        .filter(u => u.id !== meId)
         .forEach((u, i) => {
             const el = document.createElement("div");
             el.className = "card p-2 d-flex flex-column align-items-center gap-2";
@@ -34,7 +47,6 @@ fetch("/api/callme/users")
                 </button>
             `;
 
-            // Кнопка позвонить
             el.querySelector("button").onclick = () => {
                 tg.sendData(`/callme ${u.id}`);
                 tg.close();
@@ -42,7 +54,9 @@ fetch("/api/callme/users")
 
             list.appendChild(el);
 
-            // Анимация появления с задержкой
             setTimeout(() => el.classList.add("show"), i * 100);
         });
-});
+}
+
+// Запускаем
+loadContacts();
