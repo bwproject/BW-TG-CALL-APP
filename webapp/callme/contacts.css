@@ -25,3 +25,11 @@ button {
 small, div {
     color: #fff !important;
 }
+
+.name {
+    font-size: 0.9rem;
+    margin: 6px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
