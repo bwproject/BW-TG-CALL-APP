@@ -180,8 +180,11 @@ async def callme_cmd(message: types.Message):
 def register_callme_api(bot: Bot):
     @callme_api_router.post("/call")
     async def callme_call_api(request: Request):
-        # Читаем тело запроса один раз
-        data = await request.json()
+        try:
+            data = await request.json()
+        except Exception:
+            return {"ok": False, "error": "Невозможно прочитать JSON"}
+
         from_id = data.get("user_id")
         target_id = data.get("tg_id")
 
@@ -208,7 +211,7 @@ def register_callme_api(bot: Bot):
             pending_calls.pop(target_id, None)
             return {"ok": False, "error": "Невозможно отправить сообщение пользователю"}
 
-        return {"ok": True}
+        return {"ok": True, "message": "Запрос на звонок отправлен"}
 
 # ─── Callback: позвонить из WebApp ──────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_user:"))
