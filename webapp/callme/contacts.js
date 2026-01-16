@@ -7,10 +7,11 @@ const me = tg.initDataUnsafe.user;
 document.getElementById("me-name").innerText = me.first_name || "Пользователь";
 document.getElementById("me-id").innerText = me.id;
 
+const meAvatar = document.getElementById("me-avatar");
 if (me.photo_url) {
-    document.getElementById("me-avatar").src = me.photo_url;
+    meAvatar.src = me.photo_url;
 } else {
-    document.getElementById("me-avatar").style.display = "none";
+    meAvatar.src = "https://via.placeholder.com/80/333333/ffffff?text=?"; // fallback
 }
 
 /* ─── Load contacts ─── */
@@ -21,21 +22,17 @@ fetch("/api/callme/users")
 
     users
         .filter(u => u.id !== me.id)
-        .forEach(u => {
+        .forEach((u, i) => {
             const el = document.createElement("div");
-            el.className = "card p-2 d-flex flex-row align-items-center gap-2";
+            el.className = "card p-2 d-flex flex-column align-items-center gap-2";
 
+            const avatar = u.avatar || "https://via.placeholder.com/70/333333/ffffff?text=?";
             el.innerHTML = `
-                <img src="${u.avatar || ''}" class="rounded-circle" width="48" height="48"
-                     onerror="this.style.display='none'">
-
-                <div class="flex-grow-1">
-                    <div class="fw-semibold">${u.name}</div>
-                    <div class="text-muted small">TGID: ${u.id}</div>
-                </div>
-
-                <button class="btn btn-success btn-sm">
-                    <i class="fa-solid fa-phone"></i>
+                <img src="${avatar}" class="rounded-circle" width="70" height="70">
+                <div class="name fw-semibold">${u.name}</div>
+                <div class="text-white small">TGID: ${u.id}</div>
+                <button class="call btn btn-success btn-sm mt-2">
+                    <i class="fa-solid fa-phone"></i> Позвонить
                 </button>
             `;
 
@@ -45,5 +42,8 @@ fetch("/api/callme/users")
             };
 
             list.appendChild(el);
+
+            // Анимация появления с задержкой
+            setTimeout(() => el.classList.add("show"), i * 100);
         });
 });
