@@ -2,7 +2,7 @@ Telegram.WebApp.expand();
 
 const tg = Telegram.WebApp;
 
-// ─── Load current user from CallMe API ───
+// ─── Load current user & contacts from CallMe API ───
 fetch("/api/callme/users")
 .then(r => r.json())
 .then(users => {
@@ -32,7 +32,6 @@ fetch("/api/callme/users")
             `;
 
             el.querySelector("button").onclick = async () => {
-                // Отправка POST запроса на бэкенд
                 const resp = await fetch("/api/callme/call", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
