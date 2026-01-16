@@ -1,35 +1,26 @@
-Telegram.WebApp.expand();
 const tg = Telegram.WebApp;
-const meId = tg.initDataUnsafe.user.id;
+tg.expand();
 
-async function fetchUsers() {
-    const res = await fetch("/api/callme/users");
-    const data = await res.json();
-    // Преобразуем объект в массив
-    return Object.values(data);
-}
+let meData = tg.initDataUnsafe.user;
 
-async function init() {
-    const users = await fetchUsers();
+// Отображаем текущего пользователя
+document.getElementById("me-name").innerText = meData.first_name || "Пользователь";
+document.getElementById("me-id").innerText = meData.id;
+document.getElementById("me-avatar").src = "https://via.placeholder.com/80/333333/ffffff?text=?";
 
-    // Найдём текущего пользователя
-    const meData = users.find(u => u.id === meId);
-    if (!meData) {
-        console.error("❌ Текущий пользователь не найден в callme.json");
-        return;
+fetch("/api/callme/users")
+.then(r => r.json())
+.then(users => {
+    const list = document.getElementById("list");
+
+    // Найдём текущего пользователя из файла
+    const me = users.find(u => u.id === meData.id);
+    if(me && me.avatar) {
+        document.getElementById("me-avatar").src = me.avatar;
     }
 
-    // Верхний блок
-    document.getElementById("me-name").textContent = meData.name;
-    document.getElementById("me-id").textContent = meData.id;
-    document.getElementById("me-avatar").src = meData.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
-
-    // Список контактов (кроме текущего пользователя)
-    const list = document.getElementById("list");
-    list.innerHTML = "";
-
     users
-        .filter(u => u.id !== meId)
+        .filter(u => u.id !== meData.id)
         .forEach((u, i) => {
             const el = document.createElement("div");
             el.className = "card p-2 d-flex flex-column align-items-center gap-2";
@@ -44,25 +35,34 @@ async function init() {
                 </button>
             `;
 
-            el.querySelector("button").onclick = async () => {
-                try {
-                    await fetch("/api/callme/call", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ user_id: meId, tg_id: u.id })
-                    });
-                    alert("✅ Запрос на звонок отправлен");
-                } catch (err) {
-                    alert("❌ Не удалось отправить звонок");
-                    console.error(err);
-                }
+            el.querySelector("button").onclick = () => {
+                // POST на API звонка
+                fetch("/api/callme/call", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: meData.id, tg_id: u.id })
+                }).then(r => r.json())
+                .then(resp => {
+                    if(resp.ok) {
+                        // Ожидаем WebSocket события
+                        const callId = `${meData.id}_${u.id}`;
+                        const ws = new WebSocket(`wss://${location.host}/api/callme/ws/${callId}`);
+                        ws.onmessage = msg => {
+                            const data = JSON.parse(msg.data);
+                            if(data.type === "call_url") {
+                                window.open(data.url);
+                            } else if(data.type === "call_denied") {
+                                alert("Пользователь отклонил звонок");
+                            }
+                        };
+                        alert("✅ Запрос на звонок отправлен");
+                    } else {
+                        alert("❌ Ошибка при отправке запроса");
+                    }
+                });
             };
 
-            // Анимация появления с задержкой
-            setTimeout(() => el.classList.add("show"), i * 100);
-
             list.appendChild(el);
+            setTimeout(() => el.classList.add("show"), i*100);
         });
-}
-
-init();
+});
