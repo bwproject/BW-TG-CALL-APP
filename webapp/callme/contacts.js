@@ -1,85 +1,91 @@
+/* ─────────────────────────────────────────────
+   CallMe Contacts WebApp
+   Логика: при нажатии "Позвонить"
+   → открывается чат с ботом
+   → вставляется команда /callme TGID
+   ───────────────────────────────────────────── */
+
 const tg = Telegram.WebApp;
 tg.expand();
 
-let meData = tg.initDataUnsafe.user;
-console.log("⚡ Инициализация WebApp, текущий пользователь:", meData);
+const BOT_USERNAME = "ProjectBWDL_bot"; // ❗ БЕЗ @
 
-// Отображаем текущего пользователя
-document.getElementById("me-name").innerText = meData.first_name || "Пользователь";
+/* ─── Текущий пользователь ───────────────── */
+const meData = tg.initDataUnsafe?.user;
+console.log("⚡ WebApp init, user:", meData);
+
+if (!meData) {
+    alert("❌ WebApp запущен вне Telegram");
+}
+
+/* ─── Отображение текущего пользователя ───── */
+document.getElementById("me-name").innerText =
+    meData.first_name || "Пользователь";
+
 document.getElementById("me-id").innerText = meData.id;
-document.getElementById("me-avatar").src = "https://via.placeholder.com/80/333333/ffffff?text=?";
 
-// Получаем всех пользователей из API
+document.getElementById("me-avatar").src =
+    "https://via.placeholder.com/80/333333/ffffff?text=?";
+
+/* ─── Загрузка контактов ─────────────────── */
 fetch("/api/callme/users")
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+    })
     .then(users => {
-        console.log("📇 Загружены пользователи:", users);
+        console.log("📇 CallMe users:", users);
+
         const list = document.getElementById("list");
 
-        // Найдём текущего пользователя из файла
+        /* ── Аватар текущего пользователя ── */
         const me = users.find(u => u.id === meData.id);
-        if (me && me.avatar) {
+        if (me?.avatar) {
             document.getElementById("me-avatar").src = me.avatar;
         }
 
-        // Отображаем остальных пользователей
+        /* ── Остальные пользователи ── */
         users
             .filter(u => u.id !== meData.id)
             .forEach((u, i) => {
                 const el = document.createElement("div");
                 el.className = "card p-2 d-flex flex-column align-items-center gap-2";
 
-                const avatar = u.avatar || "https://via.placeholder.com/70/333333/ffffff?text=?";
+                const avatar =
+                    u.avatar ||
+                    "https://via.placeholder.com/70/333333/ffffff?text=?";
+
                 el.innerHTML = `
                     <img src="${avatar}" class="rounded-circle" width="70" height="70">
                     <div class="name fw-semibold">${u.name}</div>
                     <div class="text-white small">TGID: ${u.id}</div>
-                    <button class="call btn btn-success btn-sm mt-2">
+
+                    <button class="btn btn-success btn-sm mt-2 call">
                         <i class="fa-solid fa-phone"></i> Позвонить
                     </button>
                 `;
 
-                el.querySelector("button").onclick = () => {
-                    console.log(`📨 Отправка запроса на звонок ${meData.id} -> ${u.id}`);
-                    fetch("/api/callme/call", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ user_id: meData.id, tg_id: u.id })
-                    })
-                    .then(r => r.json())
-                    .then(resp => {
-                        console.log("Ответ API звонка:", resp);
-                        if (resp.ok) {
-                            const callId = `${meData.id}_${u.id}`;
-                            console.log("🌐 Подключение к WebSocket:", callId);
-                            const ws = new WebSocket(`wss://${location.host}/api/callme/ws/${callId}`);
+                /* ─── КНОПКА ЗВОНКА ───────────── */
+                el.querySelector(".call").onclick = () => {
+                    const cmd = `/callme ${u.id}`;
 
-                            ws.onmessage = msg => {
-                                const data = JSON.parse(msg.data);
-                                console.log("Получено через WS:", data);
+                    console.log("📞 Открываем бота с командой:", cmd);
 
-                                if (data.type === "call_url") {
-                                    window.open(data.url, "_blank");
-                                } else if (data.type === "call_denied") {
-                                    alert("❌ Пользователь отклонил звонок");
-                                }
-                            };
+                    tg.openTelegramLink(
+                        `https://t.me/${BOT_USERNAME}?text=${encodeURIComponent(cmd)}`
+                    );
 
-                            alert("✅ Запрос на звонок отправлен");
-                        } else {
-                            alert(`❌ Ошибка при отправке запроса: ${resp.error || "Неизвестная ошибка"}`);
-                        }
-                    })
-                    .catch(err => {
-                        console.error("❌ Ошибка при POST /call:", err);
-                        alert("❌ Ошибка при отправке запроса на сервер");
-                    });
+                    // по желанию — закрыть WebApp
+                    setTimeout(() => tg.close(), 300);
                 };
 
                 list.appendChild(el);
-                setTimeout(() => el.classList.add("show"), i * 100);
+
+                // простая анимация
+                setTimeout(() => el.classList.add("show"), i * 80);
             });
     })
     .catch(err => {
-        console.error("❌ Ошибка при загрузке пользователей:", err);
+        console.error("❌ Ошибка загрузки контактов:", err);
+        alert("Не удалось загрузить список контактов");
     });
