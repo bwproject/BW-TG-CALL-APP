@@ -1,42 +1,50 @@
 body {
-    background:#121212;
-    color:#fff;
+    background: #121212;
+    color: #fff;
 }
 
 .card {
-    background:#1e1e1e;
-    border-radius:14px;
-    padding:10px;
-    text-align:center;
+    background: #1e1e1e;
+    border-radius: 14px;
+    padding: 10px;
+    text-align: center;
+    color: #fff; /* ВСЕ тексты белые */
 }
 
 .card img {
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    object-fit:cover;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .name {
-    font-size:.9rem;
-    margin:6px 0;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    font-size: 0.9rem;
+    margin: 6px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff; /* имя белое */
+}
+
+#me .fw-bold, 
+#me .text-white, 
+#list div {
+    color: #fff !important; /* TGID и прочие тексты белые */
 }
 
 .call {
-    width:100%;
-    background:#22c55e;
-    border:none;
-    border-radius:10px;
-    font-size:.9rem;
-    padding:6px;
-    color:#fff;
+    width: 100%;
+    background: #22c55e;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    padding: 6px;
+    color: #fff; /* текст кнопки белый */
 }
 
 #list {
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
-    gap:12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
 }
