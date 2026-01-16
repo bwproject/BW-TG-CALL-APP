@@ -1,0 +1,33 @@
+body { background:#121212; color:#fff }
+.grid {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+}
+.card {
+    background:#1e1e1e;
+    border-radius:14px;
+    padding:10px;
+    text-align:center;
+}
+.card img {
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    object-fit:cover;
+}
+.name {
+    font-size:.8rem;
+    margin:6px 0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.call {
+    width:100%;
+    background:#22c55e;
+    border:none;
+    border-radius:10px;
+    font-size:.8rem;
+    padding:6px;
+}
