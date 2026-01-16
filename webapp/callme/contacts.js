@@ -1,22 +1,19 @@
 Telegram.WebApp.expand();
-const tg = Telegram.WebApp;
-const meId = tg.initDataUnsafe.user.id;
 
-/* ─── Load all users from API ─── */
 fetch("/api/callme/users")
 .then(r => r.json())
 .then(users => {
-    const meUser = users.find(u => u.id === meId);
+    const tg = Telegram.WebApp;
+    const meId = tg.initDataUnsafe.user.id;
+    const list = document.getElementById("list");
 
-    // Верхний блок "Я"
+    const meUser = users.find(u => u.id === meId);
     if (meUser) {
-        document.getElementById("me-name").innerText = meUser.name || "Пользователь";
+        document.getElementById("me-name").innerText = meUser.name;
         document.getElementById("me-id").innerText = meUser.id;
         document.getElementById("me-avatar").src = meUser.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
     }
 
-    // Контакты
-    const list = document.getElementById("list");
     users
         .filter(u => u.id !== meId)
         .forEach((u, i) => {
@@ -33,19 +30,14 @@ fetch("/api/callme/users")
                 </button>
             `;
 
-            const btn = el.querySelector("button");
-            btn.onclick = async () => {
-                try {
-                    await tg.sendData(`/callme ${u.id}`);
-                    tg.close();
-                } catch (err) {
-                    console.error("Ошибка при отправке данных в бот:", err);
-                }
+            // заменяем sendData на inline callback
+            el.querySelector("button").onclick = () => {
+                // создаём кнопку в виде callback_query
+                tg.sendData = undefined; // отключаем WebApp sendData
+                fetch(`/send_callback/${u.id}`); // сделаем фейковый fetch
             };
 
             list.appendChild(el);
-
-            // Анимация появления
             setTimeout(() => el.classList.add("show"), i * 100);
         });
 });
