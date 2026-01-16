@@ -56,6 +56,9 @@ async def create_bot():
     return bot
 
 # ─── Dispatcher ──────────────────────────
+from callme import register_callme_api
+
+register_callme_api(bot)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
