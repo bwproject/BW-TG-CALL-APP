@@ -1,7 +1,6 @@
 body { 
     background:#121212; 
     color:#fff; 
-    font-family: sans-serif;
 }
 
 .card {
@@ -23,11 +22,6 @@ body {
     height:70px;
     border-radius:50%;
     object-fit:cover;
-}
-
-#me img {
-    width:80px;
-    height:80px;
 }
 
 .name {
@@ -59,7 +53,6 @@ body {
 #me {
     color: #fff !important;
 }
-
-#me .small {
+#me .small, #me .fw-bold {
     color: #fff !important;
 }
