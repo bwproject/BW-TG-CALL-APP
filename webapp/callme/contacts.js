@@ -1,36 +1,23 @@
+Telegram.WebApp.expand();
 const tg = Telegram.WebApp;
+const meId = tg.initDataUnsafe.user.id; // текущий пользователь по tgID
 
-// Ждём полной инициализации Telegram WebApp
-tg.ready();
-tg.expand();
-
-// Рендер текущего пользователя в верхнем блоке
-function renderCurrentUser(me) {
-    const meName = me.first_name || "Пользователь";
-    const meId = me.id || 0;
-    const meAvatar = me.photo_url || "https://via.placeholder.com/80/333333/ffffff?text=?";
-
-    document.getElementById("me-name").innerText = meName;
-    document.getElementById("me-id").innerText = meId;
-    document.getElementById("me-avatar").src = meAvatar;
-}
-
-// Загружаем контакты с сервера
-async function loadContacts() {
-    const res = await fetch("/api/callme/users");
-    const users = await res.json();
-    const meId = tg.initDataUnsafe?.user?.id;
-
-    // Рендерим верхний контейнер
+/* ─── Load all users from API ─── */
+fetch("/api/callme/users")
+.then(r => r.json())
+.then(users => {
+    // Найти текущего пользователя
     const meUser = users.find(u => u.id === meId);
+
+    // Заполнить верхний блок "Я"
     if (meUser) {
-        renderCurrentUser(meUser);
-    } else if (tg.initDataUnsafe?.user) {
-        renderCurrentUser(tg.initDataUnsafe.user);
+        document.getElementById("me-name").innerText = meUser.name || "Пользователь";
+        document.getElementById("me-id").innerText = meUser.id;
+        document.getElementById("me-avatar").src = meUser.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
     }
 
+    // Рендер остальных контактов
     const list = document.getElementById("list");
-
     users
         .filter(u => u.id !== meId)
         .forEach((u, i) => {
@@ -54,9 +41,7 @@ async function loadContacts() {
 
             list.appendChild(el);
 
+            // Анимация появления
             setTimeout(() => el.classList.add("show"), i * 100);
         });
-}
-
-// Запускаем
-loadContacts();
+});
