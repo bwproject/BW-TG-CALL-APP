@@ -1,27 +1,32 @@
 const tg = Telegram.WebApp;
 tg.expand();
 
-const me = tg.initDataUnsafe?.user || { id: 0, first_name: "Пользователь" };
-
-// ─── Render current user ───
-document.getElementById("me-name").innerText = me.first_name;
-document.getElementById("me-id").innerText = me.id;
-
-const meAvatar = document.getElementById("me-avatar");
-if (me.photo_url) {
-    meAvatar.src = me.photo_url;
-} else {
-    meAvatar.src = "https://via.placeholder.com/80/333333/ffffff?text=?";
-}
-
-// ─── Load contacts ───
+// ─── Load all users from bot API ───
 fetch("/api/callme/users")
 .then(r => r.json())
 .then(users => {
     const list = document.getElementById("list");
+    const meId = tg.initDataUnsafe?.user?.id || 0;
 
+    // ─── Find current user in the list ───
+    const meUser = users.find(u => u.id === meId);
+
+    // Render current user
+    if (meUser) {
+        document.getElementById("me-name").innerText = meUser.name;
+        document.getElementById("me-id").innerText = meUser.id;
+        const meAvatar = document.getElementById("me-avatar");
+        meAvatar.src = meUser.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
+    } else {
+        // fallback если нет в базе
+        document.getElementById("me-name").innerText = "Пользователь";
+        document.getElementById("me-id").innerText = meId;
+        document.getElementById("me-avatar").src = "https://via.placeholder.com/80/333333/ffffff?text=?";
+    }
+
+    // ─── Render other contacts ───
     users
-        .filter(u => u.id !== me.id)
+        .filter(u => u.id !== meId)
         .forEach((u, i) => {
             const el = document.createElement("div");
             el.className = "card p-2 d-flex flex-column align-items-center gap-2";

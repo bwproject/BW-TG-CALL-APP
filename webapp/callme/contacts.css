@@ -24,11 +24,6 @@ body {
     transform: translateY(0);
 }
 
-/* Hover эффект для карточки */
-.card:hover {
-    transform: translateY(-3px) scale(1.02);
-}
-
 /* Аватар */
 .card img {
     width: 70px;
@@ -73,7 +68,7 @@ body {
 /* Сетка контактов */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 12px;
 }
 
@@ -83,6 +78,7 @@ body {
     border-radius: 14px;
     text-align: center;
     padding: 15px;
+    margin-bottom: 20px;
 }
 
 #me .text-muted {
