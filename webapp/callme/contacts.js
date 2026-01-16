@@ -1,10 +1,11 @@
 /* ─────────────────────────────────────────────
    CallMe Contacts WebApp
    Логика: при нажатии "Позвонить"
-   → команда копируется в буфер
-   → показывается подсказка
-   → после нажатия "ОК" открывается чат с ботом
-───────────────────────────────────────────── */
+   → команда копируется
+   → alert с подсказкой
+   → открывается чат с ботом
+   → закрывается WebApp
+   ───────────────────────────────────────────── */
 
 const tg = Telegram.WebApp;
 tg.expand();
@@ -30,19 +31,22 @@ document.getElementById("me-avatar").src =
 
 /* ─── Загрузка контактов ─────────────────── */
 fetch("/api/callme/users")
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+    })
     .then(users => {
         console.log("📇 CallMe users:", users);
 
         const list = document.getElementById("list");
 
-        // ── Аватар текущего пользователя ──
+        /* ── Аватар текущего пользователя ── */
         const me = users.find(u => u.id === meData.id);
         if (me?.avatar) {
             document.getElementById("me-avatar").src = me.avatar;
         }
 
-        // ── Остальные пользователи ──
+        /* ── Остальные пользователи ── */
         users
             .filter(u => u.id !== meData.id)
             .forEach((u, i) => {
@@ -57,38 +61,32 @@ fetch("/api/callme/users")
                     <img src="${avatar}" class="rounded-circle" width="70" height="70">
                     <div class="name fw-semibold">${u.name}</div>
                     <div class="text-white small">TGID: ${u.id}</div>
-
                     <button class="btn btn-success btn-sm mt-2 call">
                         <i class="fa-solid fa-phone"></i> Позвонить
                     </button>
                 `;
 
                 /* ─── КНОПКА ЗВОНКА ───────────── */
-                el.querySelector(".call").onclick = async () => {
+                el.querySelector(".call").onclick = () => {
                     const cmd = `/callme ${u.id}`;
-                    console.log("📞 Копируем команду:", cmd);
 
-                    try {
-                        // 1️⃣ Копируем команду в буфер
-                        await navigator.clipboard.writeText(cmd);
+                    // Копируем команду в буфер
+                    navigator.clipboard.writeText(cmd).then(() => {
+                        // Показываем подсказку
+                        alert(`✅ Команда скопирована!\n\nНажмите "OK", чтобы открыть чат с ботом @${BOT_USERNAME}`);
 
-                        // 2️⃣ Показываем подсказку
-                        alert(`✅ Команда скопирована!\n\nНажмите "ОК", чтобы открыть чат с ботом @${BOT_USERNAME}`);
-
-                        // 3️⃣ После нажатия ОК открываем чат
-                        tg.openTelegramLink(`https://t.me/${BOT_USERNAME}`);
-                    } catch (err) {
-                        console.error("❌ Не удалось скопировать команду:", err);
-                        alert(
-                            `❌ Не удалось скопировать команду.\nСкопируйте вручную: ${cmd}\n\nНажмите "ОК", чтобы открыть чат с ботом @${BOT_USERNAME}`
-                        );
-                        tg.openTelegramLink(`https://t.me/${BOT_USERNAME}`);
-                    }
+                        // После закрытия alert открываем чат и закрываем WebApp
+                        window.open(`https://t.me/${BOT_USERNAME}`, "_blank");
+                        tg.close();
+                    }).catch(err => {
+                        console.error("❌ Ошибка копирования команды:", err);
+                        alert("❌ Не удалось скопировать команду");
+                    });
                 };
 
                 list.appendChild(el);
 
-                // простая анимация
+                // простая анимация появления
                 setTimeout(() => el.classList.add("show"), i * 80);
             });
     })
