@@ -1,5 +1,3 @@
-Правь тут 
-
 const tg = Telegram.WebApp;
 tg.expand();
 
