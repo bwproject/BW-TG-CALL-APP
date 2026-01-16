@@ -11,7 +11,7 @@ const meAvatar = document.getElementById("me-avatar");
 if (me.photo_url) {
     meAvatar.src = me.photo_url;
 } else {
-    meAvatar.src = "https://via.placeholder.com/80/333333/ffffff?text=?"; // fallback
+    meAvatar.src = "https://via.placeholder.com/80/333333/ffffff?text=?";
 }
 
 /* ─── Load contacts ─── */
@@ -37,6 +37,7 @@ fetch("/api/callme/users")
             `;
 
             el.querySelector("button").onclick = () => {
+                // Отправляем данные в бот
                 tg.sendData(`/callme ${u.id}`);
                 tg.close();
             };
