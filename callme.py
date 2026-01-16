@@ -168,7 +168,7 @@ async def callme_cmd(message: types.Message):
             f"📞 <b>CallMe — аудио/видеозвонки</b>\n\n"
             f"Твой TGID:\n<code>{message.from_user.id}</code> - Нажми и он скопируется\n\n"
             f"Чтобы позвонить:\n<code>/callme TGID</code>\n\n"
-            f"ℹ️ Подробнее о Mini App: /callmeinfo"
+            f"ℹ️ Подробнее о Mini App: /callmeinfo\n\n"
             f"Так же можно выбрать контакт в WebApp 👇",
             reply_markup=callme_contacts_kb(),  # ← ДОБАВЛЕНА ТОЛЬКО КНОПКА
         )
