@@ -128,14 +128,17 @@ async def callmeinfo_cmd(message: types.Message):
 @callme_router.message(Command("callme"))
 async def callme_cmd(message: types.Message):
     await save_callme_user(message)
+
     args = message.text.split()
     if len(args) == 1:
         await message.answer(
             f"Привет, {message.from_user.first_name} 👋\n\n"
             f"📞 <b>CallMe — аудио/видеозвонки</b>\n\n"
-            f"Твой TGID:\n<code>{message.from_user.id}</code> - Нажми и он скопируется\n\n"
+            f"Твой TGID:\n<code>{message.from_user.id}</code> — нажми, чтобы скопировать\n\n"
             f"Чтобы позвонить:\n<code>/callme TGID</code>\n\n"
-            f"ℹ️ Подробнее о Mini App: /callmeinfo"
+            f"Или выбери контакт из списка 👇\n\n"
+            f"ℹ️ Подробнее о Mini App: /callmeinfo",
+            reply_markup=callme_contacts_kb()
         )
         return
 
@@ -226,6 +229,15 @@ async def callme_ws(ws: WebSocket, call_id: str):
         active_ws[call_id].remove(ws)
         logger.info(f"❌ WS отключён: call_id={call_id}")
 
+# ─── CallMe Contacts API ─────────────────
+@callme_api_router.get("/users")
+async def callme_users_api():
+    """
+    Отдаёт список пользователей для WebApp контактов
+    """
+    users = load_callme_users()
+    return list(users.values())
+    
 # ─── TURN / STUN ─────────────────────────
 @callme_api_router.get("/turn")
 async def get_turn_config():
