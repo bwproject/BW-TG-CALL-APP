@@ -1,90 +1,48 @@
-/* ─── Body ───────────────────────────── */
-body {
-    background: #121212;
-    color: #fff;
-    font-family: "Segoe UI", Roboto, sans-serif;
-    margin: 0;
-    padding: 0;
+body { 
+    background:#121212; 
+    color:#fff; 
 }
 
-/* ─── Карточки ───────────────────────── */
 .card {
-    background: #1e1e1e;
-    border-radius: 14px;
-    text-align: center;
-    padding: 10px;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    opacity: 0;
-    transform: translateY(20px);
+    background:#1e1e1e;
+    border-radius:14px;
+    padding:10px;
+    text-align:center;
+    transition: all 0.3s ease;
 }
 
-/* Анимация появления */
 .card.show {
-    opacity: 1;
     transform: translateY(0);
+    opacity: 1;
 }
 
-/* Аватар */
 .card img {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    object-fit: cover;
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    object-fit:cover;
 }
 
-/* Имя */
 .name {
-    font-size: 0.9rem;
-    margin: 6px 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size:.9rem;
+    margin:6px 0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 
-/* TGID */
-.card .text-white {
-    font-size: 0.8rem;
-    color: #fff !important;
-}
-
-/* Кнопка позвонить */
 .call {
-    width: 100%;
-    background: #22c55e;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.8rem;
-    padding: 6px;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
+    width:100%;
+    background:#22c55e;
+    border:none;
+    border-radius:10px;
+    font-size:.8rem;
+    padding:6px;
+    cursor:pointer;
 }
 
-.call:hover {
-    background: #16a34a;
-    transform: scale(1.05);
-}
-
-/* Сетка контактов */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 12px;
-}
-
-/* Текущий пользователь */
-#me {
-    background: #1e1e1e;
-    border-radius: 14px;
-    text-align: center;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-#me .text-muted {
-    color: #ccc !important;
-}
-
-#me-avatar {
-    object-fit: cover;
+#list {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));
+    gap:12px;
 }
