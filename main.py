@@ -23,10 +23,10 @@ from callme import callme_router, callme_api_router
 
 # ─── ENV ─────────────────────────────────
 API_TOKEN = os.getenv("TOKEN")
-WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
-WEBAPP_HOST = os.getenv("WEBAPP_HOST", "https://webapp.projectbw.ru")
+WEBAPP_PORT = int(os.getenv("WEBAPP_PORT"))
+WEBAPP_HOST = os.getenv("WEBAPP_HOST")
 WEBAPP_FOLDER = "webapp"
-API_PORT = int(os.getenv("API_PORT", "22870"))
+API_PORT = int(os.getenv("API_PORT"))
 
 if not API_TOKEN:
     raise ValueError("❌ TOKEN не найден в .env файле")
