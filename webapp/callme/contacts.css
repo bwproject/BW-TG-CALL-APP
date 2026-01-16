@@ -1,61 +1,58 @@
-/* ─── BODY ─── */
+/* ─── Body ───────────────────────────── */
 body {
     background: #121212;
     color: #fff;
-    font-family: Arial, sans-serif;
+    font-family: "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
-/* ─── GRID ─── */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-}
-
-/* ─── CARD ─── */
+/* ─── Карточки ───────────────────────── */
 .card {
     background: #1e1e1e;
     border-radius: 14px;
-    padding: 10px;
     text-align: center;
-    color: #fff;
-    transition: transform 0.2s, box-shadow 0.2s, opacity 0.4s;
-    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
     opacity: 0;
+    transform: translateY(20px);
 }
 
-/* ─── CARD SHOW (анимация появления) ─── */
+/* Анимация появления */
 .card.show {
     opacity: 1;
+    transform: translateY(0);
 }
 
-/* ─── CARD HOVER ─── */
+/* Hover эффект для карточки */
 .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    transform: translateY(-3px) scale(1.02);
 }
 
-/* ─── CARD IMAGE ─── */
+/* Аватар */
 .card img {
     width: 70px;
     height: 70px;
     border-radius: 50%;
     object-fit: cover;
-    margin-bottom: 6px;
-    background: #333; /* фон для пустых аватаров */
 }
 
-/* ─── NAME ─── */
+/* Имя */
 .name {
     font-size: 0.9rem;
     margin: 6px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #fff;
 }
 
-/* ─── CALL BUTTON ─── */
+/* TGID */
+.card .text-white {
+    font-size: 0.8rem;
+    color: #fff !important;
+}
+
+/* Кнопка позвонить */
 .call {
     width: 100%;
     background: #22c55e;
@@ -64,34 +61,34 @@ body {
     font-size: 0.8rem;
     padding: 6px;
     color: #fff;
-    transition: background 0.2s, transform 0.2s;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
-/* ─── CALL BUTTON HOVER ─── */
 .call:hover {
-    background: #1fa851;
+    background: #16a34a;
     transform: scale(1.05);
 }
 
-/* ─── USER INFO ─── */
-#me {
-    background: #1e1e1e;
-    color: #fff;
-    padding: 15px;
-    border-radius: 14px;
-    margin-bottom: 15px;
-    text-align: center;
-}
-#me-name {
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-#me-id {
-    color: #fff;
+/* Сетка контактов */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
+    gap: 12px;
 }
 
-/* ─── CONTACTS HEADER ─── */
-h5 {
-    color: #fff;
-    margin-bottom: 10px;
+/* Текущий пользователь */
+#me {
+    background: #1e1e1e;
+    border-radius: 14px;
+    text-align: center;
+    padding: 15px;
+}
+
+#me .text-muted {
+    color: #ccc !important;
+}
+
+#me-avatar {
+    object-fit: cover;
 }
