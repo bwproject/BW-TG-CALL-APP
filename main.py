@@ -1,12 +1,9 @@
 # main.py
 
-import os
 import asyncio
+import os
 import logging
 from dotenv import load_dotenv
-
-# ─── Загрузка .env (ОБЯЗАТЕЛЬНО ДО ИМПОРТОВ callme) ─────────────
-load_dotenv()
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
@@ -16,82 +13,88 @@ from aiogram.client.session.aiohttp import AiohttpSession
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-# 🆕 CALLME (теперь env уже загружен)
-from callme import callme_router, callme_api_router
+# 🆕 CallMe
+from callme import callme_router, callme_api_router, register_callme_api
 
-# ─── ENV ─────────────────────────────────
-API_TOKEN = os.getenv("TOKEN")
-WEBAPP_PORT = int(os.getenv("WEBAPP_PORT"))
-WEBAPP_HOST = os.getenv("WEBAPP_HOST")
+# ─── ENV ──────────────────────────────────
+load_dotenv()
+
+TOKEN = os.getenv("TOKEN")
+API_PORT = int(os.getenv("API_PORT", "22870"))
 WEBAPP_FOLDER = "webapp"
-API_PORT = int(os.getenv("API_PORT"))
 
-if not API_TOKEN:
-    raise ValueError("❌ TOKEN не найден в .env файле")
+if not TOKEN:
+    raise RuntimeError("❌ TOKEN не задан в .env")
 
-# ─── Логирование ─────────────────────────
+# ─── Логи ─────────────────────────────────
 os.makedirs("logs", exist_ok=True)
-log_file_path = os.path.join("logs", "bot.log")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     handlers=[
-        logging.FileHandler(log_file_path, encoding="utf-8"),
+        logging.FileHandler("logs/callme-bot.log", encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger(__name__)
 
-# ─── Создание бота ───────────────────────
-async def create_bot():
+logger = logging.getLogger("callme-bot")
+
+# ─── BOT ──────────────────────────────────
+async def create_bot() -> Bot:
     session = AiohttpSession()
-    bot = Bot(
-        token=API_TOKEN,
+    return Bot(
+        token=TOKEN,
         session=session,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
-    logger.info("🤖 Бот создан")
-    return bot
 
-# ─── Dispatcher ──────────────────────────
-storage = MemoryStorage()
-dp = Dispatcher(storage=storage)
-
-# ─── CallMe router ───────────────────────
+# ─── DISPATCHER ───────────────────────────
+dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(callme_router)
 
-# ─── FastAPI ─────────────────────────────
-app = FastAPI()
+# ─── FASTAPI ──────────────────────────────
+app = FastAPI(title="CallMe API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# WebApp (Mini App)
 app.mount(
-    "/webapp/callme",
+    "/callme",
     StaticFiles(directory="webapp/callme", html=True),
     name="callme_webapp"
 )
 
-app.include_router(
-    callme_api_router,
-    prefix="/api/callme"
-)
+# API
+app.include_router(callme_api_router, prefix="/api/callme")
 
-# ─── Запуск бота ─────────────────────────
+# ─── RUN BOT ──────────────────────────────
 async def run_bot():
     bot = await create_bot()
 
+    # регистрируем API с реальным ботом
+    register_callme_api(bot)
+
     await bot.set_my_commands([
-        types.BotCommand(command="callme", description="Голосовой / видео звонок"),
-        types.BotCommand(command="callmeinfo", description="Информация о CallMe")
+        types.BotCommand(command="callme", description="📞 Позвонить"),
+        types.BotCommand(command="callmeinfo", description="ℹ️ О CallMe"),
     ])
 
     await bot.delete_webhook(drop_pending_updates=True)
 
-    logger.info("🤖 Бот запущен")
+    logger.info("🤖 CallMe бот запущен")
     await dp.start_polling(bot)
 
-# ─── FastAPI сервер ──────────────────────
-async def start_api_server():
+# ─── RUN API ──────────────────────────────
+async def run_api():
     config = uvicorn.Config(
         app,
         host="0.0.0.0",
@@ -101,17 +104,12 @@ async def start_api_server():
     server = uvicorn.Server(config)
     await server.serve()
 
-# ─── Main ────────────────────────────────
+# ─── MAIN ─────────────────────────────────
 async def main():
-    api_task = asyncio.create_task(start_api_server())
-    try:
-        await run_bot()
-    finally:
-        api_task.cancel()
-        try:
-            await api_task
-        except asyncio.CancelledError:
-            logger.info("🌐 API сервер остановлен")
+    await asyncio.gather(
+        run_bot(),
+        run_api()
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
