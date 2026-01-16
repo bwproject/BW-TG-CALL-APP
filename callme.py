@@ -1,5 +1,3 @@
-# callme.py
-
 import os
 import time
 import json
@@ -180,9 +178,8 @@ async def callme_cmd(message: types.Message):
 def register_callme_api(bot: Bot):
     @callme_api_router.post("/call")
     async def callme_call_api(request: Request):
-        data = await request.json()
-        from_id = data.get("user_id")  # кто нажал кнопку
-        target_id = data.get("tg_id")  # кому звонить
+        from_id = (await request.json()).get("user_id")
+        target_id = (await request.json()).get("tg_id")
 
         if not from_id or not target_id:
             return {"ok": False, "error": "Missing user_id or tg_id"}
@@ -190,10 +187,8 @@ def register_callme_api(bot: Bot):
         if from_id == target_id:
             return {"ok": False, "error": "Нельзя звонить самому себе"}
 
-        # сохраняем звонящего
         await save_callme_user(bot, types.User(id=from_id, is_bot=False, first_name=f"WebAppUser_{from_id}"))
 
-        # Отправляем сообщение звонку
         try:
             pending_calls[target_id] = from_id
             await bot.send_message(
