@@ -1,50 +1,61 @@
 body {
-    background: #121212;
-    color: #fff;
-}
-
-.card {
-    background: #1e1e1e;
-    border-radius: 14px;
+    background-color: #121212;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    margin: 0;
     padding: 10px;
-    text-align: center;
-    color: #fff; /* ВСЕ тексты белые */
 }
 
-.card img {
-    width: 70px;
-    height: 70px;
+.user-block {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.user-avatar img {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    object-fit: cover;
+    margin-right: 15px;
 }
 
-.name {
-    font-size: 0.9rem;
-    margin: 6px 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: #fff; /* имя белое */
+.user-info .label {
+    font-size: 14px;
+    color: #ffffff;
+    margin-bottom: 3px;
 }
 
-#me .fw-bold, 
-#me .text-white, 
-#list div {
-    color: #fff !important; /* TGID и прочие тексты белые */
+.user-info div {
+    color: #ffffff;
 }
 
-.call {
-    width: 100%;
-    background: #22c55e;
+.contact {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px;
+    border-bottom: 1px solid #333;
+}
+
+.contact img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.contact button {
+    margin-left: auto;
+    padding: 6px 12px;
+    background-color: #1a73e8;
+    color: #fff;
     border: none;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    padding: 6px;
-    color: #fff; /* текст кнопки белый */
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-#list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
+.contact button:hover {
+    background-color: #155ab6;
 }
