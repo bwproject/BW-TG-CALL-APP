@@ -1,6 +1,7 @@
 body { 
     background:#121212; 
     color:#fff; 
+    font-family: sans-serif;
 }
 
 .card {
@@ -24,6 +25,11 @@ body {
     object-fit:cover;
 }
 
+#me img {
+    width:80px;
+    height:80px;
+}
+
 .name {
     font-size:.9rem;
     margin:6px 0;
@@ -41,7 +47,7 @@ body {
     font-size:.8rem;
     padding:6px;
     cursor:pointer;
-    color: #fff; 
+    color: #fff;
 }
 
 #list {
@@ -54,6 +60,6 @@ body {
     color: #fff !important;
 }
 
-#me .text-muted {
+#me .small {
     color: #fff !important;
 }
