@@ -1,62 +1,61 @@
-Telegram.WebApp.expand();
-const tg = Telegram.WebApp;
+const API_URL = "/api/callme/users";
+const CALL_API = "/api/callme/call";
 
-// ─── Load current user & contacts from CallMe API ───
-fetch("/api/callme/users")
-.then(r => r.json())
-.then(users => {
-    const meUser = users.find(u => u.id === tg.initDataUnsafe.user.id);
+async function fetchUsers() {
+    const res = await fetch(API_URL);
+    const users = await res.json();
+    return users;
+}
 
-    if (meUser) {
-        // Верхний блок — текущий пользователь
-        document.getElementById("me-name").innerText = meUser.name || "Пользователь";
-        document.getElementById("me-id").innerText = meUser.id;
-        document.getElementById("me-avatar").src = meUser.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
-    } else {
-        // Fallback
-        document.getElementById("me-name").innerText = tg.initDataUnsafe.user.first_name || "Пользователь";
-        document.getElementById("me-id").innerText = tg.initDataUnsafe.user.id;
-        document.getElementById("me-avatar").src = tg.initDataUnsafe.user.photo_url || "https://via.placeholder.com/80/333333/ffffff?text=?";
-    }
+function renderCurrentUser(user) {
+    document.getElementById("current-name").textContent = user.name;
+    document.getElementById("current-tgid").textContent = "TGID: " + user.id;
+    document.getElementById("current-avatar").src = user.avatar || "/callme/avatar/default.jpg";
+}
 
-    const list = document.getElementById("list");
+function renderContacts(users, currentUserId) {
+    const container = document.getElementById("contacts");
+    container.innerHTML = "";
 
-    users
-        .filter(u => u.id !== tg.initDataUnsafe.user.id)
-        .forEach((u, i) => {
-            const el = document.createElement("div");
-            el.className = "card p-2 d-flex flex-column align-items-center gap-2";
+    users.forEach(user => {
+        if (user.id === currentUserId) return;
 
-            const avatar = u.avatar || "https://via.placeholder.com/70/333333/ffffff?text=?";
-            el.innerHTML = `
-                <img src="${avatar}" class="rounded-circle" width="70" height="70">
-                <div class="name fw-semibold">${u.name}</div>
-                <div>TGID: ${u.id}</div>
-                <button class="call btn btn-success btn-sm mt-2">
-                    <i class="fa-solid fa-phone"></i> Позвонить
-                </button>
-            `;
+        const div = document.createElement("div");
+        div.className = "contact";
 
-            el.querySelector("button").onclick = async () => {
-                const resp = await fetch("/api/callme/call", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({
-                        user_id: tg.initDataUnsafe.user.id,
-                        tg_id: u.id
-                    })
-                });
+        const img = document.createElement("img");
+        img.src = user.avatar || "/callme/avatar/default.jpg";
+        div.appendChild(img);
 
-                const result = await resp.json();
-                if (result.ok) {
-                    tg.showAlert("✅ Запрос на звонок отправлен");
-                    tg.close();
-                } else {
-                    tg.showAlert("❌ Ошибка: " + result.error);
-                }
-            };
+        const info = document.createElement("div");
+        info.innerHTML = `<div>${user.name}</div><div>TGID: ${user.id}</div>`;
+        div.appendChild(info);
 
-            list.appendChild(el);
-            setTimeout(() => el.classList.add("show"), i * 100);
-        });
-});
+        const btn = document.createElement("button");
+        btn.textContent = "📞 Позвонить";
+        btn.onclick = async () => {
+            await fetch(CALL_API, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    tg_id: user.id
+                })
+            });
+            btn.textContent = "✅ Запрос отправлен";
+            btn.disabled = true;
+        };
+        div.appendChild(btn);
+
+        container.appendChild(div);
+    });
+}
+
+async function init() {
+    const users = await fetchUsers();
+    const currentUser = users[users.length - 1]; // считаем последним вошедшим
+    renderCurrentUser(currentUser);
+    renderContacts(users, currentUser.id);
+}
+
+init();
