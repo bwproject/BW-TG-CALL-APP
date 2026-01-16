@@ -112,6 +112,14 @@ async def save_callme_user(bot: Bot, user: types.User):
         "updated_at": int(time.time()),
     }
     save_callme_users(users)
+    
+
+# ─── Получение имени бота из .env ─────────────────
+@callme_api_router.get("/botusername")
+async def get_bot_username():
+    # если переменная не задана, возвращаем дефолтное имя
+    bot_username = os.getenv("CALLME_BOT_USERNAME", "ProjectBWDL_bot")
+    return {"bot_username": bot_username}
 
 # ─── /callmeinfo ─────────────────────────
 @callme_router.message(Command("callmeinfo"))
@@ -212,18 +220,6 @@ def register_callme_api(bot: Bot):
             return {"ok": False, "error": "Невозможно отправить сообщение пользователю"}
 
         return {"ok": True, "message": "Запрос на звонок отправлен"}
-
-# ─── Callback: позвонить из WebApp ──────────
-@callme_router.callback_query(lambda c: c.data.startswith("callme_user:"))
-async def callme_user_cb(callback: CallbackQuery):
-    target_id = int(callback.data.split(":")[1])
-    await callme_cmd(types.Message(
-        chat=types.Chat(id=callback.from_user.id, type="private"),
-        from_user=callback.from_user,
-        text=f"/callme {target_id}",
-        bot=callback.bot
-    ))
-    await callback.answer("✅ Запрос на звонок отправлен")
 
 # ─── Callback: принять ──────────────────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_accept:"))
