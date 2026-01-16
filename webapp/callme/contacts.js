@@ -1,22 +1,23 @@
 Telegram.WebApp.expand();
+const tg = Telegram.WebApp;
 
+// Загружаем пользователей
 fetch("/api/callme/users")
   .then(r => r.json())
   .then(users => {
-    const tg = Telegram.WebApp;
     const meId = tg.initDataUnsafe.user.id;
     const list = document.getElementById("list");
 
-    // текущий пользователь
+    // Текущий пользователь
     const meUser = users.find(u => u.id === meId);
     if (meUser) {
       document.getElementById("me-name").innerText = "Я: " + meUser.name;
-      document.getElementById("me-id").innerText = meUser.id;
+      document.getElementById("me-id").innerText = "TGID: " + meUser.id;
       document.getElementById("me-avatar").src =
         meUser.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
     }
 
-    // контакты
+    // Контакты
     users.filter(u => u.id !== meId).forEach((u, i) => {
       const el = document.createElement("div");
       el.className = "card p-2 d-flex flex-column align-items-center gap-2";
@@ -31,10 +32,9 @@ fetch("/api/callme/users")
         </button>
       `;
 
-      // Сразу вызываем callback в боте
+      // Отправка команды /callme TGID в бот
       el.querySelector("button").onclick = () => {
-        // Telegram WebApp может отправлять callback_data через метод answerCallbackQuery
-        tg.sendData(`/callme ${u.id}`); // Это будет поймано webapp_data_handler
+        tg.sendData(`/callme ${u.id}`);
         tg.close();
       };
 
