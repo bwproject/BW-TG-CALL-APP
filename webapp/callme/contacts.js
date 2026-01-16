@@ -1,83 +1,68 @@
-const API_USERS = "/api/callme/users";
-const API_CALL = "/api/callme/call";
+Telegram.WebApp.expand();
+const tg = Telegram.WebApp;
+const meId = tg.initDataUnsafe.user.id;
 
-let currentUser = null;
-
-// Получаем текущего пользователя через Telegram WebApp
-function initWebApp() {
-    if (window.Telegram.WebApp) {
-        const tg = window.Telegram.WebApp;
-        currentUser = {
-            id: tg.initDataUnsafe.user.id,
-            name: tg.initDataUnsafe.user.first_name || "Пользователь",
-            avatar: tg.initDataUnsafe.user.photo_url || "/callme/avatar/default.jpg",
-        };
-        renderCurrentUser(currentUser);
-    } else {
-        console.warn("⚠ Telegram WebApp API недоступно");
-        currentUser = {id: 0, name: "Гость", avatar: "/callme/avatar/default.jpg"};
-        renderCurrentUser(currentUser);
-    }
-}
-
-// Отрисовка верхнего блока "Я"
-function renderCurrentUser(user) {
-    document.getElementById("current-name").textContent = user.name;
-    document.getElementById("current-tgid").textContent = "TGID: " + user.id;
-    document.getElementById("current-avatar").src = user.avatar;
-}
-
-// Получение всех пользователей
 async function fetchUsers() {
-    const res = await fetch(API_USERS);
-    const users = await res.json();
-    return users;
+    const res = await fetch("/api/callme/users");
+    const data = await res.json();
+    // Преобразуем объект в массив
+    return Object.values(data);
 }
 
-// Отрисовка списка контактов
-function renderContacts(users, currentId) {
-    const container = document.getElementById("contacts");
-    container.innerHTML = "";
-
-    users.forEach(user => {
-        if (user.id === currentId) return;
-
-        const div = document.createElement("div");
-        div.className = "contact";
-
-        const img = document.createElement("img");
-        img.src = user.avatar || "/callme/avatar/default.jpg";
-        div.appendChild(img);
-
-        const info = document.createElement("div");
-        info.innerHTML = `<div>${user.name}</div><div>TGID: ${user.id}</div>`;
-        div.appendChild(info);
-
-        const btn = document.createElement("button");
-        btn.textContent = "📞 Позвонить";
-        btn.onclick = async () => {
-            await fetch(API_CALL, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    user_id: currentId,
-                    tg_id: user.id
-                })
-            });
-            btn.textContent = "✅ Запрос отправлен";
-            btn.disabled = true;
-        };
-        div.appendChild(btn);
-
-        container.appendChild(div);
-    });
-}
-
-// Инициализация страницы
 async function init() {
-    initWebApp();
     const users = await fetchUsers();
-    renderContacts(users, currentUser.id);
+
+    // Найдём текущего пользователя
+    const meData = users.find(u => u.id === meId);
+    if (!meData) {
+        console.error("❌ Текущий пользователь не найден в callme.json");
+        return;
+    }
+
+    // Верхний блок
+    document.getElementById("me-name").textContent = meData.name;
+    document.getElementById("me-id").textContent = meData.id;
+    document.getElementById("me-avatar").src = meData.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
+
+    // Список контактов (кроме текущего пользователя)
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    users
+        .filter(u => u.id !== meId)
+        .forEach((u, i) => {
+            const el = document.createElement("div");
+            el.className = "card p-2 d-flex flex-column align-items-center gap-2";
+
+            const avatar = u.avatar || "https://via.placeholder.com/70/333333/ffffff?text=?";
+            el.innerHTML = `
+                <img src="${avatar}" class="rounded-circle" width="70" height="70">
+                <div class="name fw-semibold">${u.name}</div>
+                <div class="text-white small">TGID: ${u.id}</div>
+                <button class="call btn btn-success btn-sm mt-2">
+                    <i class="fa-solid fa-phone"></i> Позвонить
+                </button>
+            `;
+
+            el.querySelector("button").onclick = async () => {
+                try {
+                    await fetch("/api/callme/call", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ user_id: meId, tg_id: u.id })
+                    });
+                    alert("✅ Запрос на звонок отправлен");
+                } catch (err) {
+                    alert("❌ Не удалось отправить звонок");
+                    console.error(err);
+                }
+            };
+
+            // Анимация появления с задержкой
+            setTimeout(() => el.classList.add("show"), i * 100);
+
+            list.appendChild(el);
+        });
 }
 
 init();
