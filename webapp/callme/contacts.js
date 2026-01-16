@@ -1,5 +1,4 @@
 Telegram.WebApp.expand();
-
 const tg = Telegram.WebApp;
 
 // ─── Load current user & contacts from CallMe API ───
@@ -7,10 +6,17 @@ fetch("/api/callme/users")
 .then(r => r.json())
 .then(users => {
     const meUser = users.find(u => u.id === tg.initDataUnsafe.user.id);
+
     if (meUser) {
-        document.getElementById("me-name").innerText = meUser.name;
+        // Верхний блок — текущий пользователь
+        document.getElementById("me-name").innerText = meUser.name || "Пользователь";
         document.getElementById("me-id").innerText = meUser.id;
         document.getElementById("me-avatar").src = meUser.avatar || "https://via.placeholder.com/80/333333/ffffff?text=?";
+    } else {
+        // Fallback
+        document.getElementById("me-name").innerText = tg.initDataUnsafe.user.first_name || "Пользователь";
+        document.getElementById("me-id").innerText = tg.initDataUnsafe.user.id;
+        document.getElementById("me-avatar").src = tg.initDataUnsafe.user.photo_url || "https://via.placeholder.com/80/333333/ffffff?text=?";
     }
 
     const list = document.getElementById("list");
