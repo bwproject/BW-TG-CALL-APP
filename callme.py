@@ -1,3 +1,5 @@
+# callme.py
+
 import os
 import time
 import json
@@ -17,7 +19,6 @@ from aiogram.types import (
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from fastapi import APIRouter, Request, WebSocket
 from fastapi.websockets import WebSocketDisconnect
-
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +64,7 @@ def callme_contacts_kb() -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     text="📇 Контакты CallMe",
-                    web_app=WebAppInfo(
-                        url=f"{WEBAPP_HOST}/callme/contacts.html"
-                    ),
+                    web_app=WebAppInfo(url=f"{WEBAPP_HOST}/callme/contacts.html"),
                 )
             ]
         ]
@@ -133,7 +132,6 @@ async def save_callme_user(message: types.Message):
         "avatar": avatar,
         "updated_at": int(time.time()),
     }
-
     save_callme_users(users)
 
 # ─── /callmeinfo ─────────────────────────
@@ -155,7 +153,6 @@ async def callmeinfo_cmd(message: types.Message):
     )
 
 # ─── /callme ─────────────────────────────
-@callme_router.message(Command("callme"))
 async def callme_cmd(message: types.Message):
     await save_callme_user(message)
 
@@ -201,30 +198,31 @@ async def callme_cmd(message: types.Message):
 
     await message.answer("📨 Запрос на звонок отправлен")
 
-# ─── WebApp POST endpoint ─────────────────
-@callme_api_router.post("/call")
-async def callme_call_api(request: Request):
-    data = await request.json()
-    user_id = data.get("user_id")
-    tg_id = data.get("tg_id")
+# ─── WebApp POST endpoint (с реальным ботом) ─────────────
+def register_callme_api(bot: types.Bot):
+    @callme_api_router.post("/call")
+    async def callme_call_api(request: Request):
+        data = await request.json()
+        user_id = data.get("user_id")
+        tg_id = data.get("tg_id")
 
-    if not user_id or not tg_id:
-        return {"ok": False, "error": "Missing user_id or tg_id"}
+        if not user_id or not tg_id:
+            return {"ok": False, "error": "Missing user_id or tg_id"}
 
-    from_user = types.User(id=user_id, is_bot=False, first_name="WebAppUser")
-    chat = types.Chat(id=user_id, type="private")
+        from_user = types.User(id=user_id, is_bot=False, first_name="WebAppUser")
+        chat = types.Chat(id=user_id, type="private")
 
-    message = types.Message(
-        message_id=int(time.time()),
-        date=int(time.time()),
-        chat=chat,
-        from_user=from_user,
-        text=f"/callme {tg_id}",
-        bot=callme_router.bot
-    )
+        message = types.Message(
+            message_id=int(time.time()),
+            date=int(time.time()),
+            chat=chat,
+            from_user=from_user,
+            text=f"/callme {tg_id}",
+            bot=bot  # <- передаём реальный бот
+        )
 
-    await callme_cmd(message)
-    return {"ok": True}
+        await callme_cmd(message)
+        return {"ok": True}
 
 # ─── Callback: принять ───────────────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_accept:"))
