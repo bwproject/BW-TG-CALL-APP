@@ -4,15 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CallMe Contacts</title>
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
 <link rel="stylesheet" href="./contacts.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
+
 <body>
 <div class="container py-3">
-    <h5 class="text-center">📇 Контакты CallMe</h5>
-    <div id="list" class="grid"></div>
+
+    <!-- USER INFO -->
+    <div class="card mb-3 p-3 text-center" id="me">
+        <img id="me-avatar" class="rounded-circle mb-2" width="80" height="80">
+        <div class="fw-bold" id="me-name"></div>
+        <div class="text-muted">TGID: <span id="me-id"></span></div>
+    </div>
+
+    <!-- CONTACTS -->
+    <h5 class="text-center mb-2">
+        <i class="fa-solid fa-address-book"></i> Контакты CallMe
+    </h5>
+
+    <div id="list" class="d-grid gap-2"></div>
 </div>
+
 <script src="./contacts.js"></script>
 </body>
 </html>
