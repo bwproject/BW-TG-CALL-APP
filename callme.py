@@ -1,5 +1,3 @@
-# callme.py
-
 import os
 import time
 import json
@@ -17,8 +15,7 @@ from aiogram.types import (
     CallbackQuery,
 )
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
-
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, Request, WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
@@ -170,7 +167,7 @@ async def callme_cmd(message: types.Message):
             f"Чтобы позвонить:\n<code>/callme TGID</code>\n\n"
             f"ℹ️ Подробнее о Mini App: /callmeinfo\n\n"
             f"Так же можно выбрать контакт в WebApp 👇",
-            reply_markup=callme_contacts_kb(),  # ← ДОБАВЛЕНА ТОЛЬКО КНОПКА
+            reply_markup=callme_contacts_kb(),
         )
         return
 
@@ -202,6 +199,31 @@ async def callme_cmd(message: types.Message):
         return
 
     await message.answer("📨 Запрос на звонок отправлен")
+
+# ─── WebApp POST endpoint ─────────────────
+@callme_api_router.post("/call")
+async def callme_call_api(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    tg_id = data.get("tg_id")
+
+    if not user_id or not tg_id:
+        return {"ok": False, "error": "Missing user_id or tg_id"}
+
+    from_user = types.User(id=user_id, is_bot=False, first_name="WebAppUser")
+    chat = types.Chat(id=user_id, type="private")
+
+    message = types.Message(
+        message_id=int(time.time()),
+        date=int(time.time()),
+        chat=chat,
+        from_user=from_user,
+        text=f"/callme {tg_id}",
+        bot=callme_router.bot
+    )
+
+    await callme_cmd(message)
+    return {"ok": True}
 
 # ─── Callback: принять ───────────────────
 @callme_router.callback_query(lambda c: c.data.startswith("callme_accept:"))
@@ -269,23 +291,12 @@ async def callme_users_api():
     users = load_callme_users()
     return list(users.values())
 
-# ─── WebApp data handler ─────────────────
-@callme_router.message()
-async def webapp_data_handler(message: types.Message):
-    if message.web_app_data:
-        data = message.web_app_data.data
-        # Если это команда /callme TGID
-        if data.startswith("/callme "):
-            message.text = data
-            await callme_cmd(message)
-
 # ─── Callback: позвонить пользователю из WebApp ───
 @callme_router.callback_query(lambda c: c.data.startswith("callme_user:"))
 async def callme_user_cb(callback: CallbackQuery):
     target_id = int(callback.data.split(":")[1])
-    # создаём фейковое сообщение и передаём в callme_cmd
     message = types.Message(
-        chat=callback.from_user.id,
+        chat=types.Chat(id=callback.from_user.id, type="private"),
         from_user=callback.from_user,
         text=f"/callme {target_id}",
         bot=callback.bot
@@ -293,28 +304,6 @@ async def callme_user_cb(callback: CallbackQuery):
     await callme_cmd(message)
     await callback.answer("✅ Запрос на звонок отправлен")
 
-from fastapi import Request
-
-@callme_api_router.post("/callme/call")
-async def callme_call_api(request: Request):
-    data = await request.json()
-    user_id = data.get("user_id")
-    tg_id = data.get("tg_id")
-
-    if not user_id or not tg_id:
-        return {"ok": False, "error": "Missing user_id or tg_id"}
-
-    from_user = types.User(id=user_id, is_bot=False, first_name="WebAppUser")
-    message = types.Message(
-        chat=user_id,
-        from_user=from_user,
-        text=f"/callme {tg_id}",
-        bot=callme_router.bot
-    )
-
-    await callme_cmd(message)
-    return {"ok": True}
-            
 # ─── TURN / STUN ─────────────────────────
 @callme_api_router.get("/turn")
 async def get_turn_config():
