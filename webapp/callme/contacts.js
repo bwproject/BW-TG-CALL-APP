@@ -1,62 +1,49 @@
-/* ─────────────────────────────────────────────
-   CallMe Contacts WebApp
-   Логика: при нажатии "Позвонить"
-   → команда копируется
-   → alert с подсказкой
-   → открывается чат с ботом
-   → закрывается WebApp
-   ───────────────────────────────────────────── */
-
 const tg = Telegram.WebApp;
 tg.expand();
 
-const BOT_USERNAME = "ProjectBWDL_bot"; // ❗ БЕЗ @
+let BOT_USERNAME = "ProjectBWDL_bot"; // запасной вариант
 
-/* ─── Текущий пользователь ───────────────── */
-const meData = tg.initDataUnsafe?.user;
-console.log("⚡ WebApp init, user:", meData);
-
-if (!meData) {
-    alert("❌ WebApp запущен вне Telegram");
-}
-
-/* ─── Отображение текущего пользователя ───── */
-document.getElementById("me-name").innerText =
-    meData.first_name || "Пользователь";
-
-document.getElementById("me-id").innerText = meData.id;
-
-document.getElementById("me-avatar").src =
-    "https://via.placeholder.com/80/333333/ffffff?text=?";
-
-/* ─── Загрузка контактов ─────────────────── */
-fetch("/api/callme/users")
-    .then(r => {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
+// Получаем имя бота из API
+fetch("/api/callme/botusername")
+    .then(r => r.json())
+    .then(data => {
+        if (data.bot_username) BOT_USERNAME = data.bot_username;
+        console.log("📌 Используемый бот:", BOT_USERNAME);
+        initContacts(); // вызываем функцию, которая строит список контактов
     })
-    .then(users => {
-        console.log("📇 CallMe users:", users);
+    .catch(err => {
+        console.error("❌ Не удалось получить BOT_USERNAME:", err);
+        initContacts();
+    });
 
-        const list = document.getElementById("list");
+// ─── Функция инициализации списка контактов ─────────────────────
+function initContacts() {
+    const meData = tg.initDataUnsafe?.user;
+    console.log("⚡ WebApp init, user:", meData);
 
-        /* ── Аватар текущего пользователя ── */
-        const me = users.find(u => u.id === meData.id);
-        if (me?.avatar) {
-            document.getElementById("me-avatar").src = me.avatar;
-        }
+    if (!meData) {
+        alert("❌ WebApp запущен вне Telegram");
+        return;
+    }
 
-        /* ── Остальные пользователи ── */
-        users
-            .filter(u => u.id !== meData.id)
-            .forEach((u, i) => {
+    document.getElementById("me-name").innerText = meData.first_name || "Пользователь";
+    document.getElementById("me-id").innerText = meData.id;
+    document.getElementById("me-avatar").src = "https://via.placeholder.com/80/333333/ffffff?text=?";
+
+    fetch("/api/callme/users")
+        .then(r => r.json())
+        .then(users => {
+            console.log("📇 CallMe users:", users);
+            const list = document.getElementById("list");
+
+            const me = users.find(u => u.id === meData.id);
+            if (me?.avatar) document.getElementById("me-avatar").src = me.avatar;
+
+            users.filter(u => u.id !== meData.id).forEach((u, i) => {
                 const el = document.createElement("div");
                 el.className = "card p-2 d-flex flex-column align-items-center gap-2";
 
-                const avatar =
-                    u.avatar ||
-                    "https://via.placeholder.com/70/333333/ffffff?text=?";
-
+                const avatar = u.avatar || "https://via.placeholder.com/70/333333/ffffff?text=?";
                 el.innerHTML = `
                     <img src="${avatar}" class="rounded-circle" width="70" height="70">
                     <div class="name fw-semibold">${u.name}</div>
@@ -66,16 +53,11 @@ fetch("/api/callme/users")
                     </button>
                 `;
 
-                /* ─── КНОПКА ЗВОНКА ───────────── */
                 el.querySelector(".call").onclick = () => {
                     const cmd = `/callme ${u.id}`;
 
-                    // Копируем команду в буфер
                     navigator.clipboard.writeText(cmd).then(() => {
-                        // Показываем подсказку
                         alert(`✅ Команда скопирована!\n\nНажмите "OK", чтобы открыть чат с ботом @${BOT_USERNAME}`);
-
-                        // После закрытия alert открываем чат и закрываем WebApp
                         window.open(`https://t.me/${BOT_USERNAME}`, "_blank");
                         tg.close();
                     }).catch(err => {
@@ -85,12 +67,11 @@ fetch("/api/callme/users")
                 };
 
                 list.appendChild(el);
-
-                // простая анимация появления
                 setTimeout(() => el.classList.add("show"), i * 80);
             });
-    })
-    .catch(err => {
-        console.error("❌ Ошибка загрузки контактов:", err);
-        alert("Не удалось загрузить список контактов");
-    });
+        })
+        .catch(err => {
+            console.error("❌ Ошибка загрузки контактов:", err);
+            alert("Не удалось загрузить список контактов");
+        });
+}
