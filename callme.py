@@ -278,6 +278,20 @@ async def webapp_data_handler(message: types.Message):
         if data.startswith("/callme "):
             message.text = data
             await callme_cmd(message)
+
+# ─── Callback: позвонить пользователю из WebApp ───
+@callme_router.callback_query(lambda c: c.data.startswith("callme_user:"))
+async def callme_user_cb(callback: CallbackQuery):
+    target_id = int(callback.data.split(":")[1])
+    # создаём фейковое сообщение и передаём в callme_cmd
+    message = types.Message(
+        chat=callback.from_user.id,
+        from_user=callback.from_user,
+        text=f"/callme {target_id}",
+        bot=callback.bot
+    )
+    await callme_cmd(message)
+    await callback.answer("✅ Запрос на звонок отправлен")
             
 # ─── TURN / STUN ─────────────────────────
 @callme_api_router.get("/turn")
