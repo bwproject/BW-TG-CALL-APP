@@ -1,33 +1,69 @@
-body { background:#121212; color:#fff }
+/* ─── BODY ─── */
+body {
+    background: #121212;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+/* ─── GRID ─── */
 .grid {
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
 }
+
+/* ─── CARD ─── */
 .card {
-    background:#1e1e1e;
-    border-radius:14px;
-    padding:10px;
-    text-align:center;
+    background: #1e1e1e;
+    border-radius: 14px;
+    padding: 10px;
+    text-align: center;
+    color: #fff; /* текст внутри карточки белый */
 }
+
+/* ─── CARD IMAGE ─── */
 .card img {
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    object-fit:cover;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
 }
+
+/* ─── NAME ─── */
 .name {
-    font-size:.8rem;
-    margin:6px 0;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    font-size: 0.9rem;
+    margin: 6px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff; /* белый текст */
 }
+
+/* ─── CALL BUTTON ─── */
 .call {
-    width:100%;
-    background:#22c55e;
-    border:none;
-    border-radius:10px;
-    font-size:.8rem;
-    padding:6px;
+    width: 100%;
+    background: #22c55e;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    padding: 6px;
+    color: #fff; /* текст кнопки белый */
+}
+
+/* ─── USER INFO ─── */
+#me {
+    background: #1e1e1e;
+    color: #fff;
+}
+#me-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+#me-id {
+    color: #ccc; /* немного светлее для TGID */
+}
+
+/* ─── CONTACTS HEADER ─── */
+h5 {
+    color: #fff; /* белый заголовок */
 }
