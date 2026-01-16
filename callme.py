@@ -292,6 +292,28 @@ async def callme_user_cb(callback: CallbackQuery):
     )
     await callme_cmd(message)
     await callback.answer("✅ Запрос на звонок отправлен")
+
+from fastapi import Request
+
+@callme_api_router.post("/callme/call")
+async def callme_call_api(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    tg_id = data.get("tg_id")
+
+    if not user_id or not tg_id:
+        return {"ok": False, "error": "Missing user_id or tg_id"}
+
+    from_user = types.User(id=user_id, is_bot=False, first_name="WebAppUser")
+    message = types.Message(
+        chat=user_id,
+        from_user=from_user,
+        text=f"/callme {tg_id}",
+        bot=callme_router.bot
+    )
+
+    await callme_cmd(message)
+    return {"ok": True}
             
 # ─── TURN / STUN ─────────────────────────
 @callme_api_router.get("/turn")
