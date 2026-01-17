@@ -20,42 +20,35 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-
-# ─────────────────────────────────────────────
-# 🔐 ЗАГРУЗКА .ENV — САМОЕ ПЕРВОЕ
-# ─────────────────────────────────────────────
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ENV_PATH = os.path.join(BASE_DIR, ".env")
-
-if not os.path.exists(ENV_PATH):
-    raise RuntimeError(f"❌ .env файл не найден: {ENV_PATH}")
-
-load_dotenv(ENV_PATH, override=True)
-
-def require_env(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise RuntimeError(f"❌ ENV переменная {name} не задана")
-    return value
-
-# ─────────────────────────────────────────────
-# 🔐 ENV ПЕРЕМЕННЫЕ
-# ─────────────────────────────────────────────
-
-TOKEN = require_env("TOKEN")
-CALLME_BOT_USERNAME = require_env("CALLME_BOT_USERNAME")
-WEBAPP_HOST = require_env("WEBAPP_HOST")
-
-API_PORT = int(os.getenv("API_PORT", "22870"))
-WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
-
-TURNIP = os.getenv("TURNIP")
-TURNLOGIN = os.getenv("TURNLOGIN")
-TURNPASSWORD = os.getenv("TURNPASSWORD")
-
 # ─── Импорт роутеров ─────────────────────────────
+from dr import router as dr_router
+from commands import router, send_daily_meme, scheduler
+from minigames import game_router
+from minigames2 import router as battleship_router
+from minigamesweb import webapp_router, api_router, game_webapp_router
+from minigamesweb3 import app as flappy_app, flappy_router
+from boltalka import router as boltalka_router, watch_models_file, start_model_watcher
+from sora2test import router as sora2test_router
+from kalendar import router as kalendar_router
+from module import router as module_router
+
+# 🆕 CALLME
 from callme import callme_router, callme_api_router, register_callme_api
+
+# 🆕 PIPSA авто-проверка
+from pipsa import daily_check
+
+# ─── Загрузка .env ─────────────────────────────
+load_dotenv()
+API_TOKEN = os.getenv("TOKEN")
+GROUP_CHAT_ID = int(os.getenv("GROUP_CHAT_ID", "-1001811880246"))
+WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
+WEBAPP_FOLDER = "webapp"
+WEBAPP_URL1 = os.getenv("WEBAPP_URL1", "https://webapp.projectbw.ru/tictactoe/index.html")
+API_PORT = int(os.getenv("API_PORT", "22870"))
+
+if not API_TOKEN:
+    raise ValueError("❌ TOKEN не найден в .env файле")
 
 # ─── Логирование ────────────────────────────────
 os.makedirs("logs", exist_ok=True)
@@ -91,6 +84,17 @@ storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 # ─── Подключаем aiogram роутеры ────────────────
+dp.include_router(module_router)
+dp.include_router(router)
+dp.include_router(dr_router)
+dp.include_router(game_router)
+dp.include_router(battleship_router)
+dp.include_router(game_webapp_router)
+dp.include_router(flappy_router)
+dp.include_router(boltalka_router)
+dp.include_router(sora2test_router)
+
+# 🆕 CALLME router
 dp.include_router(callme_router)
 
 # ─── FastAPI ─────────────────────────────────
@@ -104,21 +108,122 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Статика WebApps
+app.mount("/webapp", StaticFiles(directory=WEBAPP_FOLDER, html=True), name="webapp_root")
+
+# ── Старые WebApps
+app.include_router(webapp_router, prefix="/webapp/tictactoe")
+app.include_router(api_router, prefix="/api")
+
 # ── 🆕 CALLME WebApp
 app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), name="callme_webapp")
 
 # ── 🆕 CALLME API
 app.include_router(callme_api_router, prefix="/api/callme")
 
+# ── Flappy как root
+app.mount("/", flappy_app)
+
+# ─── Планировщик ─────────────────────────────
+scheduler.add_job(send_daily_meme, "cron", hour=10, minute=0)
+
+# ─── Генерация config.js ─────────────────────
+def generate_webapp_config():
+    try:
+        tictactoe_path = os.path.join(WEBAPP_FOLDER, "tictactoe")
+        os.makedirs(tictactoe_path, exist_ok=True)
+        config_path = os.path.join(tictactoe_path, "config.js")
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.write(
+                f"window.API_PORT='{API_PORT}';\n"
+                f"window.WEBAPP_URL1='{WEBAPP_URL1}';\n"
+            )
+        logger.info(f"✅ config.js сгенерирован: {config_path}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка генерации config.js: {e}")
+
+# ─── Fallback HTTP сервер ────────────────────
+def start_python_web_server():
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=WEBAPP_FOLDER, **kwargs)
+
+    with socketserver.TCPServer(("", WEBAPP_PORT), Handler) as httpd:
+        logger.info(f"✅ Python сервер (fallback) запущен на порту {WEBAPP_PORT}")
+        httpd.serve_forever()
+
+async def start_php_server():
+    php_binary = shutil.which("php")
+    if not php_binary:
+        logger.warning("⚠ PHP не найден. Использую Python HTTP сервер.")
+        threading.Thread(target=start_python_web_server, daemon=True).start()
+        return None
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            php_binary,
+            "-S", f"0.0.0.0:{WEBAPP_PORT}",
+            "-t", WEBAPP_FOLDER,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
+        logger.info(f"✅ PHP сервер запущен на порту {WEBAPP_PORT}")
+        return process
+    except Exception as e:
+        logger.error(f"❌ Ошибка запуска PHP сервера: {e}")
+        threading.Thread(target=start_python_web_server, daemon=True).start()
+        return None
+
 # ─── Запуск бота ─────────────────────────────
 async def run_bot():
     bot = await create_bot()
+
+    # 🆕 Регистрация CallMe API с реальным ботом
     register_callme_api(bot)
+
+    # 🆕 Запуск авто-проверки PIPSA в 00:01
+    asyncio.create_task(daily_check(bot))
+
     scheduler.start()
     logger.info("🤖 Бот запущен")
 
     await bot.set_my_commands([
         types.BotCommand(command="start", description="Начать"),
+        types.BotCommand(command="help", description="Помощь"),
+        types.BotCommand(command="setting", description="Настройки"),
+        types.BotCommand(command="supported_links", description="Поддерживаемые ссылки"),
+
+        types.BotCommand(command="spasibo", description="Мем 'спасибо'"),
+        types.BotCommand(command="meme", description="Случайный мем"),
+        types.BotCommand(command="memeadd", description="Добавить мем"),
+        types.BotCommand(command="ytro", description="Мем 'утро'"),
+
+        types.BotCommand(command="pidor_roll", description="Проверка 😄"),
+
+        types.BotCommand(command="krestiki", description="Крестики-нолики"),
+        types.BotCommand(command="toptictactoe", description="Топ по крестикам"),
+
+        types.BotCommand(command="flappybirdweb", description="Flappy Bird WebApp"),
+        types.BotCommand(command="flappybirdtop", description="Топ Flappy Bird"),
+
+        types.BotCommand(command="pogovorim", description="Включить болталку"),
+        types.BotCommand(command="hvatit", description="Выключить болталку"),
+        types.BotCommand(command="chatmodel", description="Выбрать модель"),
+
+        # 🆕 PIPSA / SISI
+        types.BotCommand(command="pipsa", description="🍆 Играть в PIPSA"),
+        types.BotCommand(command="pipsame", description="🍆 Мой писюн"),
+        types.BotCommand(command="pipsatop", description="🍆 Топ PIPSA"),
+        types.BotCommand(command="pipsainfo", description="🍆 Информация об игре"),
+        types.BotCommand(command="pipsapol", description="🍆 Мужской режим"),
+
+        types.BotCommand(command="sisi", description="🍒 Играть в SISI"),
+        types.BotCommand(command="sisime", description="🍒 Мои сиси"),
+        types.BotCommand(command="sisitop", description="🍒 Топ SISI"),
+        types.BotCommand(command="sisiinfo", description="🍒 Информация об игре"),
+        types.BotCommand(command="sisipol", description="🍒 Женский режим"),
+
+        # 🆕 CALLME
         types.BotCommand(command="callme", description="Голосовой / видео звонок"),
         types.BotCommand(command="callmeinfo", description="Информация о звонках"),
     ])
