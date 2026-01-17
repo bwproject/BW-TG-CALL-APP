@@ -104,13 +104,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Статика WebApps
-app.mount("/webapp", StaticFiles(directory=WEBAPP_FOLDER, html=True), name="webapp_root")
-
-# ── Старые WebApps
-app.include_router(webapp_router, prefix="/webapp/tictactoe")
-app.include_router(api_router, prefix="/api")
-
 # ── 🆕 CALLME WebApp
 app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), name="callme_webapp")
 
