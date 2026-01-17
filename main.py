@@ -20,8 +20,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-# ─── Импорт роутеров ─────────────────────────────
-from callme import callme_router, callme_api_router, register_callme_api
 
 # ─────────────────────────────────────────────
 # 🔐 ЗАГРУЗКА .ENV — САМОЕ ПЕРВОЕ
@@ -55,6 +53,9 @@ WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
 TURNIP = os.getenv("TURNIP")
 TURNLOGIN = os.getenv("TURNLOGIN")
 TURNPASSWORD = os.getenv("TURNPASSWORD")
+
+# ─── Импорт роутеров ─────────────────────────────
+from callme import callme_router, callme_api_router, register_callme_api
 
 # ─── Логирование ────────────────────────────────
 os.makedirs("logs", exist_ok=True)
