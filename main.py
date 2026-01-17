@@ -110,38 +110,6 @@ app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), n
 # ── 🆕 CALLME API
 app.include_router(callme_api_router, prefix="/api/callme")
 
-# ─── Fallback HTTP сервер ────────────────────
-def start_python_web_server():
-    class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=WEBAPP_FOLDER, **kwargs)
-
-    with socketserver.TCPServer(("", WEBAPP_PORT), Handler) as httpd:
-        logger.info(f"✅ Python сервер (fallback) запущен на порту {WEBAPP_PORT}")
-        httpd.serve_forever()
-
-async def start_php_server():
-    php_binary = shutil.which("php")
-    if not php_binary:
-        logger.warning("⚠ PHP не найден. Использую Python HTTP сервер.")
-        threading.Thread(target=start_python_web_server, daemon=True).start()
-        return None
-
-    try:
-        process = await asyncio.create_subprocess_exec(
-            php_binary,
-            "-S", f"0.0.0.0:{WEBAPP_PORT}",
-            "-t", WEBAPP_FOLDER,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL
-        )
-        logger.info(f"✅ PHP сервер запущен на порту {WEBAPP_PORT}")
-        return process
-    except Exception as e:
-        logger.error(f"❌ Ошибка запуска PHP сервера: {e}")
-        threading.Thread(target=start_python_web_server, daemon=True).start()
-        return None
-
 # ─── Запуск бота ─────────────────────────────
 async def run_bot():
     bot = await create_bot()
