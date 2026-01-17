@@ -22,17 +22,39 @@ import uvicorn
 
 # ─── Импорт роутеров ─────────────────────────────
 from callme import callme_router, callme_api_router, register_callme_api
-# ─── Загрузка .env ─────────────────────────────
-load_dotenv()
-API_TOKEN = os.getenv("TOKEN")
-GROUP_CHAT_ID = int(os.getenv("GROUP_CHAT_ID", "-1001811880246"))
-WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
-WEBAPP_FOLDER = "webapp"
-WEBAPP_URL1 = os.getenv("WEBAPP_URL1", "https://webapp.projectbw.ru/tictactoe/index.html")
-API_PORT = int(os.getenv("API_PORT", "22870"))
 
-if not API_TOKEN:
-    raise ValueError("❌ TOKEN не найден в .env файле")
+# ─────────────────────────────────────────────
+# 🔐 ЗАГРУЗКА .ENV — САМОЕ ПЕРВОЕ
+# ─────────────────────────────────────────────
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+if not os.path.exists(ENV_PATH):
+    raise RuntimeError(f"❌ .env файл не найден: {ENV_PATH}")
+
+load_dotenv(ENV_PATH, override=True)
+
+def require_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"❌ ENV переменная {name} не задана")
+    return value
+
+# ─────────────────────────────────────────────
+# 🔐 ENV ПЕРЕМЕННЫЕ
+# ─────────────────────────────────────────────
+
+TOKEN = require_env("TOKEN")
+CALLME_BOT_USERNAME = require_env("CALLME_BOT_USERNAME")
+WEBAPP_HOST = require_env("WEBAPP_HOST")
+
+API_PORT = int(os.getenv("API_PORT", "22870"))
+WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
+
+TURNIP = os.getenv("TURNIP")
+TURNLOGIN = os.getenv("TURNLOGIN")
+TURNPASSWORD = os.getenv("TURNPASSWORD")
 
 # ─── Логирование ────────────────────────────────
 os.makedirs("logs", exist_ok=True)
