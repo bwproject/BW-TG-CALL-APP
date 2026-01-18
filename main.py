@@ -1,10 +1,14 @@
 # main.py
-from dotenv import load_dotenv
-load_dotenv()  # ВАЖНО: до импортов callme
 
 import asyncio
 import os
 import logging
+import shutil
+import threading
+import http.server
+import socketserver
+from dotenv import load_dotenv
+load_dotenv()
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
@@ -17,63 +21,55 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-# ─── ENV ─────────────────────────────────────
-API_TOKEN = os.getenv("TOKEN")
-API_PORT = int(os.getenv("API_PORT", "22870"))
-WEBAPP_FOLDER = "webapp"
-
-if not API_TOKEN:
-    raise RuntimeError("❌ TOKEN не найден в .env")
-
-# ─── CALLME ──────────────────────────────────
+# ─── Импорт роутеров ─────────────────────────────
+# 🆕 CALLME
 from callme import callme_router, callme_api_router, register_callme_api
 
-# ─── Логирование ─────────────────────────────
+# ─── Загрузка .env ─────────────────────────────
+API_TOKEN = os.getenv("TOKEN")
+GROUP_CHAT_ID = int(os.getenv("GROUP_CHAT_ID", "-1001811880246"))
+WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "22869"))
+WEBAPP_FOLDER = "webapp"
+WEBAPP_URL1 = os.getenv("WEBAPP_URL1", "https://webapp.projectbw.ru/tictactoe/index.html")
+API_PORT = int(os.getenv("API_PORT", "22870"))
+
+if not API_TOKEN:
+    raise ValueError("❌ TOKEN не найден в .env файле")
+
+# ─── Логирование ────────────────────────────────
 os.makedirs("logs", exist_ok=True)
+log_file_path = os.path.join("logs", "bot.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     handlers=[
-        logging.FileHandler("logs/bot.log", encoding="utf-8"),
+        logging.FileHandler(log_file_path, encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-# ─── Aiogram ─────────────────────────────────
+# ─── Создание бота ─────────────────────────────
+async def create_bot():
+    try:
+        session = AiohttpSession()
+        bot_instance = Bot(
+            token=API_TOKEN,
+            session=session,
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        )
+        logger.info("🤖 Бот создан без прокси (локальный IP)")
+        return bot_instance
+    except Exception as e:
+        logger.error(f"Ошибка при создании Bot: {e}")
+        session = AiohttpSession()
+        return Bot(token=API_TOKEN, session=session)
+
+# ─── Инициализация ─────────────────────────────
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
+# 🆕 CALLME router
 dp.include_router(callme_router)
-
-async def create_bot() -> Bot:
-    session = AiohttpSession()
-    bot = Bot(
-        token=API_TOKEN,
-        session=session,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
-    logger.info("🤖 Bot created")
-    return bot
-
-async def run_bot():
-    bot = await create_bot()
-
-    # регистрируем CallMe API с живым ботом
-    register_callme_api(bot)
-
-    await bot.set_my_commands([
-        types.BotCommand(command="callme", description="Голосовой / видео звонок"),
-        types.BotCommand(command="callmeinfo", description="Информация о звонках"),
-    ])
-
-    await bot.delete_webhook(drop_pending_updates=True)
-
-    logger.info("🤖 Bot polling started")
-    try:
-        await dp.start_polling(bot)
-    finally:
-        await bot.session.close()
-        logger.info("🛑 Bot stopped")
 
 # ─── FastAPI ─────────────────────────────────
 app = FastAPI()
@@ -94,6 +90,21 @@ app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), n
 
 # ── 🆕 CALLME API
 app.include_router(callme_api_router, prefix="/api/callme")
+
+# ─── Генерация config.js ─────────────────────
+def generate_webapp_config():
+    try:
+        tictactoe_path = os.path.join(WEBAPP_FOLDER, "tictactoe")
+        os.makedirs(tictactoe_path, exist_ok=True)
+        config_path = os.path.join(tictactoe_path, "config.js")
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.write(
+                f"window.API_PORT='{API_PORT}';\n"
+                f"window.WEBAPP_URL1='{WEBAPP_URL1}';\n"
+            )
+        logger.info(f"✅ config.js сгенерирован: {config_path}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка генерации config.js: {e}")
 
 # ─── Fallback HTTP сервер ────────────────────
 def start_python_web_server():
@@ -127,14 +138,60 @@ async def start_php_server():
         threading.Thread(target=start_python_web_server, daemon=True).start()
         return None
 
-# ─── Main ────────────────────────────────────
+# ─── Запуск бота ─────────────────────────────
+async def run_bot():
+    bot = await create_bot()
+
+    # 🆕 Регистрация CallMe API с реальным ботом
+    register_callme_api(bot)
+
+    scheduler.start()
+    logger.info("🤖 Бот запущен")
+
+    await bot.set_my_commands([
+        types.BotCommand(command="start", description="Начать"),
+        # 🆕 CALLME
+        types.BotCommand(command="callme", description="Голосовой / видео звонок"),
+        types.BotCommand(command="callmeinfo", description="Информация о звонках"),
+    ])
+
+    await bot.delete_webhook(drop_pending_updates=True)
+
+    try:
+        await dp.start_polling(bot)
+    finally:
+        scheduler.shutdown()
+        await bot.session.close()
+        logger.info("🛑 Бот остановлен")
+
+# ─── FastAPI сервер ─────────────────────────
+async def start_api_server():
+    config = uvicorn.Config(app, host="0.0.0.0", port=API_PORT, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+# ─── Главная функция ─────────────────────────
 async def main():
-    api_task = asyncio.create_task(start_api())
+    generate_webapp_config()
+    php_process = await start_php_server()
+
+    start_model_watcher()
+    asyncio.create_task(watch_models_file())
+
+    api_task = asyncio.create_task(start_api_server())
+
     try:
         await run_bot()
     finally:
         api_task.cancel()
-        logger.info("🌐 FastAPI stopped")
+        try:
+            await api_task
+        except asyncio.CancelledError:
+            logger.info("🌐 API сервер остановлен")
+
+        if php_process:
+            php_process.terminate()
+            logger.info("PHP сервер остановлен")
 
 if __name__ == "__main__":
     asyncio.run(main())
