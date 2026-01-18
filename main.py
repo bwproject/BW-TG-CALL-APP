@@ -175,9 +175,6 @@ async def main():
     generate_webapp_config()
     php_process = await start_php_server()
 
-    start_model_watcher()
-    asyncio.create_task(watch_models_file())
-
     api_task = asyncio.create_task(start_api_server())
 
     try:
