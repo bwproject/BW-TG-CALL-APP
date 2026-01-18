@@ -89,22 +89,13 @@ app.add_middleware(
 
 # ── Статика WebApps
 app.mount("/webapp", StaticFiles(directory=WEBAPP_FOLDER, html=True), name="webapp_root")
-
-# ── Старые WebApps
-app.include_router(webapp_router, prefix="/webapp/tictactoe")
-app.include_router(api_router, prefix="/api")
-
 # ── 🆕 CALLME WebApp
 app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), name="callme_webapp")
-
 # ── 🆕 CALLME API
 app.include_router(callme_api_router, prefix="/api/callme")
 
 # ── Flappy как root
 app.mount("/", flappy_app)
-
-# ─── Планировщик ─────────────────────────────
-scheduler.add_job(send_daily_meme, "cron", hour=10, minute=0)
 
 # ─── Генерация config.js ─────────────────────
 def generate_webapp_config():
