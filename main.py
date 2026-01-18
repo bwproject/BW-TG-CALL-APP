@@ -78,40 +78,72 @@ async def run_bot():
 # ─── FastAPI ─────────────────────────────────
 app = FastAPI()
 
+# ── CORS для WebApp
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # на продакшене лучше домен
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# WebApp статика
-app.mount(
-    "/webapp",
-    StaticFiles(directory=WEBAPP_FOLDER, html=True),
-    name="webapp"
-)
+# ── Статика WebApps
+app.mount("/webapp", StaticFiles(directory=WEBAPP_FOLDER, html=True), name="webapp_root")
 
-# CallMe WebApp
-app.mount(
-    "/webapp/callme",
-    StaticFiles(directory="webapp/callme", html=True),
-    name="callme_webapp"
-)
+# ── 🆕 CALLME WebApp
+app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), name="callme_webapp")
 
-# CallMe API
+# ── 🆕 CALLME API
 app.include_router(callme_api_router, prefix="/api/callme")
 
-async def start_api():
-    config = uvicorn.Config(
-        app,
-        host="0.0.0.0",
-        port=API_PORT,
-        log_level="info"
-    )
-    server = uvicorn.Server(config)
-    logger.info(f"🌐 FastAPI started on :{API_PORT}")
-    await server.serve()
+# ─── Планировщик ─────────────────────────────
+scheduler.add_job(send_daily_meme, "cron", hour=10, minute=0)
+
+# ─── Генерация config.js ─────────────────────
+def generate_webapp_config():
+    try:
+        tictactoe_path = os.path.join(WEBAPP_FOLDER, "tictactoe")
+        os.makedirs(tictactoe_path, exist_ok=True)
+        config_path = os.path.join(tictactoe_path, "config.js")
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.write(
+                f"window.API_PORT='{API_PORT}';\n"
+                f"window.WEBAPP_URL1='{WEBAPP_URL1}';\n"
+            )
+        logger.info(f"✅ config.js сгенерирован: {config_path}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка генерации config.js: {e}")
+
+# ─── Fallback HTTP сервер ────────────────────
+def start_python_web_server():
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=WEBAPP_FOLDER, **kwargs)
+
+    with socketserver.TCPServer(("", WEBAPP_PORT), Handler) as httpd:
+        logger.info(f"✅ Python сервер (fallback) запущен на порту {WEBAPP_PORT}")
+        httpd.serve_forever()
+
+async def start_php_server():
+    php_binary = shutil.which("php")
+    if not php_binary:
+        logger.warning("⚠ PHP не найден. Использую Python HTTP сервер.")
+        threading.Thread(target=start_python_web_server, daemon=True).start()
+        return None
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            php_binary,
+            "-S", f"0.0.0.0:{WEBAPP_PORT}",
+            "-t", WEBAPP_FOLDER,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
+        logger.info(f"✅ PHP сервер запущен на порту {WEBAPP_PORT}")
+        return process
+    except Exception as e:
+        logger.error(f"❌ Ошибка запуска PHP сервера: {e}")
+        threading.Thread(target=start_python_web_server, daemon=True).start()
+        return None
 
 # ─── Main ────────────────────────────────────
 async def main():
