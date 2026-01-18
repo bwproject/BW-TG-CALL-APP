@@ -71,15 +71,6 @@ storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 # ─── Подключаем aiogram роутеры ────────────────
-dp.include_router(module_router)
-dp.include_router(router)
-dp.include_router(dr_router)
-dp.include_router(game_router)
-dp.include_router(battleship_router)
-dp.include_router(game_webapp_router)
-dp.include_router(flappy_router)
-dp.include_router(boltalka_router)
-dp.include_router(sora2test_router)
 
 # 🆕 CALLME router
 dp.include_router(callme_router)
@@ -176,40 +167,6 @@ async def run_bot():
 
     await bot.set_my_commands([
         types.BotCommand(command="start", description="Начать"),
-        types.BotCommand(command="help", description="Помощь"),
-        types.BotCommand(command="setting", description="Настройки"),
-        types.BotCommand(command="supported_links", description="Поддерживаемые ссылки"),
-
-        types.BotCommand(command="spasibo", description="Мем 'спасибо'"),
-        types.BotCommand(command="meme", description="Случайный мем"),
-        types.BotCommand(command="memeadd", description="Добавить мем"),
-        types.BotCommand(command="ytro", description="Мем 'утро'"),
-
-        types.BotCommand(command="pidor_roll", description="Проверка 😄"),
-
-        types.BotCommand(command="krestiki", description="Крестики-нолики"),
-        types.BotCommand(command="toptictactoe", description="Топ по крестикам"),
-
-        types.BotCommand(command="flappybirdweb", description="Flappy Bird WebApp"),
-        types.BotCommand(command="flappybirdtop", description="Топ Flappy Bird"),
-
-        types.BotCommand(command="pogovorim", description="Включить болталку"),
-        types.BotCommand(command="hvatit", description="Выключить болталку"),
-        types.BotCommand(command="chatmodel", description="Выбрать модель"),
-
-        # 🆕 PIPSA / SISI
-        types.BotCommand(command="pipsa", description="🍆 Играть в PIPSA"),
-        types.BotCommand(command="pipsame", description="🍆 Мой писюн"),
-        types.BotCommand(command="pipsatop", description="🍆 Топ PIPSA"),
-        types.BotCommand(command="pipsainfo", description="🍆 Информация об игре"),
-        types.BotCommand(command="pipsapol", description="🍆 Мужской режим"),
-
-        types.BotCommand(command="sisi", description="🍒 Играть в SISI"),
-        types.BotCommand(command="sisime", description="🍒 Мои сиси"),
-        types.BotCommand(command="sisitop", description="🍒 Топ SISI"),
-        types.BotCommand(command="sisiinfo", description="🍒 Информация об игре"),
-        types.BotCommand(command="sisipol", description="🍒 Женский режим"),
-
         # 🆕 CALLME
         types.BotCommand(command="callme", description="Голосовой / видео звонок"),
         types.BotCommand(command="callmeinfo", description="Информация о звонках"),
