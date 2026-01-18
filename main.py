@@ -93,10 +93,6 @@ app.mount("/webapp", StaticFiles(directory=WEBAPP_FOLDER, html=True), name="weba
 app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), name="callme_webapp")
 # ── 🆕 CALLME API
 app.include_router(callme_api_router, prefix="/api/callme")
-
-# ── Flappy как root
-app.mount("/", flappy_app)
-
 # ─── Генерация config.js ─────────────────────
 def generate_webapp_config():
     try:
