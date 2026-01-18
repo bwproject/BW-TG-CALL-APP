@@ -145,7 +145,6 @@ async def run_bot():
     # 🆕 Регистрация CallMe API с реальным ботом
     register_callme_api(bot)
 
-    scheduler.start()
     logger.info("🤖 Бот запущен")
 
     await bot.set_my_commands([
@@ -160,7 +159,6 @@ async def run_bot():
     try:
         await dp.start_polling(bot)
     finally:
-        scheduler.shutdown()
         await bot.session.close()
         logger.info("🛑 Бот остановлен")
 
