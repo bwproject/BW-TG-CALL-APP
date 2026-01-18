@@ -21,22 +21,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # ─── Импорт роутеров ─────────────────────────────
-from dr import router as dr_router
-from commands import router, send_daily_meme, scheduler
-from minigames import game_router
-from minigames2 import router as battleship_router
-from minigamesweb import webapp_router, api_router, game_webapp_router
-from minigamesweb3 import app as flappy_app, flappy_router
-from boltalka import router as boltalka_router, watch_models_file, start_model_watcher
-from sora2test import router as sora2test_router
-from kalendar import router as kalendar_router
-from module import router as module_router
 
 # 🆕 CALLME
 from callme import callme_router, callme_api_router, register_callme_api
-
-# 🆕 PIPSA авто-проверка
-from pipsa import daily_check
 
 # ─── Загрузка .env ─────────────────────────────
 load_dotenv()
