@@ -95,24 +95,6 @@ app.mount("/webapp/callme", StaticFiles(directory="webapp/callme", html=True), n
 # ── 🆕 CALLME API
 app.include_router(callme_api_router, prefix="/api/callme")
 
-# ─── Планировщик ─────────────────────────────
-scheduler.add_job(send_daily_meme, "cron", hour=10, minute=0)
-
-# ─── Генерация config.js ─────────────────────
-def generate_webapp_config():
-    try:
-        tictactoe_path = os.path.join(WEBAPP_FOLDER, "tictactoe")
-        os.makedirs(tictactoe_path, exist_ok=True)
-        config_path = os.path.join(tictactoe_path, "config.js")
-        with open(config_path, "w", encoding="utf-8") as f:
-            f.write(
-                f"window.API_PORT='{API_PORT}';\n"
-                f"window.WEBAPP_URL1='{WEBAPP_URL1}';\n"
-            )
-        logger.info(f"✅ config.js сгенерирован: {config_path}")
-    except Exception as e:
-        logger.error(f"❌ Ошибка генерации config.js: {e}")
-
 # ─── Fallback HTTP сервер ────────────────────
 def start_python_web_server():
     class Handler(http.server.SimpleHTTPRequestHandler):
