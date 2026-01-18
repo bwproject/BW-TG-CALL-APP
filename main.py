@@ -19,12 +19,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-
-# ─── Импорт роутеров ─────────────────────────────
-
-# 🆕 CALLME
-from callme import callme_router, callme_api_router, register_callme_api
-
 # ─── Загрузка .env ─────────────────────────────
 load_dotenv()
 API_TOKEN = os.getenv("TOKEN")
@@ -36,6 +30,13 @@ API_PORT = int(os.getenv("API_PORT", "22870"))
 
 if not API_TOKEN:
     raise ValueError("❌ TOKEN не найден в .env файле")
+    
+# ─── Импорт роутеров ─────────────────────────────
+
+# 🆕 CALLME
+from callme import callme_router, callme_api_router, register_callme_api
+
+
 
 # ─── Логирование ────────────────────────────────
 os.makedirs("logs", exist_ok=True)
